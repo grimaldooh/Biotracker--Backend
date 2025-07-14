@@ -1,8 +1,10 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.UserDTO;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.services.UserService;
-import com.biotrack.backend.exceptions.ValidationException;
+import com.biotrack.backend.utils.UserMapper;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,50 +23,33 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> create(@RequestBody User user) {
-        if (user == null) {
-            throw new ValidationException("User data cannot be null");
-        }
-        User created = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<UserDTO> create(@Valid @RequestBody UserDTO userDTO) {
+        User saved = userService.createUser(UserMapper.toEntity(userDTO));
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserMapper.toDTO(saved));
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAll() {
-        try {
-            List<User> users = userService.getAllUsers();
-            return ResponseEntity.ok(users);
-        } catch (Exception e) {
-            throw new ValidationException("Error retrieving users: " + e.getMessage());
-        }
+    public ResponseEntity<List<UserDTO>> getAll() {
+        List<UserDTO> users = userService.getAllUsers().stream()
+                .map(UserMapper::toDTO)
+                .toList();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable UUID id) {
-        if (id == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
+    public ResponseEntity<UserDTO> getById(@PathVariable UUID id) {
         User user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(UserMapper.toDTO(user));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable UUID id, @RequestBody User user){
-        if (id == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-        if (user == null) {
-            throw new ValidationException("User data cannot be null");
-        }
-        User updated = userService.updateUser(id, user);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<UserDTO> update(@PathVariable UUID id, @Valid @RequestBody UserDTO userDTO) {
+        User updated = userService.updateUser(id, UserMapper.toEntity(userDTO));
+        return ResponseEntity.ok(UserMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        if (id == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
         userService.deleteUserById(id);
         return ResponseEntity.noContent().build();
     }

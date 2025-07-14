@@ -38,7 +38,12 @@ public class SampleServiceImpl implements SampleService {
     }
 
     @Override
-    public Sample update(UUID id, Sample updatedSample){
-        return sampleRepository.save(updatedSample);
+    public Sample update(UUID id, Sample updatedSample) {
+        Sample existing = findById(id);
+        existing.setType(updatedSample.getType());
+        existing.setStatus(updatedSample.getStatus());
+        existing.setCollectionDate(updatedSample.getCollectionDate());
+        existing.setNotes(updatedSample.getNotes());
+        return sampleRepository.save(existing);
     }
 }

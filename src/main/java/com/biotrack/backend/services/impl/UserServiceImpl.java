@@ -39,7 +39,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(UUID id, User updatedUser){
-        return userRepository.save(updatedUser);
+    public User updateUser(UUID id, User updatedUser) {
+        User existing = getUserById(id);
+        existing.setName(updatedUser.getName());
+        existing.setEmail(updatedUser.getEmail());
+        existing.setPassword(updatedUser.getPassword());
+        existing.setRole(updatedUser.getRole());
+        return userRepository.save(existing);
     }
 }

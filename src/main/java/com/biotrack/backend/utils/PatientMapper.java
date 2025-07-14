@@ -10,7 +10,7 @@ public class PatientMapper {
                 patient.getId(),
                 patient.getFirstName(),
                 patient.getLastName(),
-                patient.getBirtDate(),
+                patient.getBirthDate(),
                 patient.getGender(),
                 patient.getCurp()
         );
@@ -21,7 +21,7 @@ public class PatientMapper {
                 .id(dto.id())
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
-                .birtDate(dto.birthDate())
+                .birthDate(dto.birthDate())
                 .gender(dto.gender())
                 .curp(dto.curp())
                 .build();
