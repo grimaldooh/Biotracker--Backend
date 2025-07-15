@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ResultFileService {
     ResultFile uploadAndLink(MultipartFile file, UUID sampleId);
     List<ResultFile> findAll();
+    ResultFile findById(UUID id);
 }
