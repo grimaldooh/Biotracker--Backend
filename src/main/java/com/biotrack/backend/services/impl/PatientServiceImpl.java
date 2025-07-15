@@ -3,10 +3,12 @@ package com.biotrack.backend.services.impl;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.repositories.PatientRepository;
 import com.biotrack.backend.services.PatientService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
