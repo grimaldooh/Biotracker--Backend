@@ -7,11 +7,12 @@ import com.biotrack.backend.models.enums.Relevance;
 import com.biotrack.backend.repositories.MutationRepository;
 import com.biotrack.backend.services.MutationService;
 import com.biotrack.backend.services.ResultFileService;
+import com.biotrack.backend.services.S3Service;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +21,14 @@ import java.util.UUID;
 public class MutationServiceImpl implements MutationService{
     private final ResultFileService resultFileService;
     private final MutationRepository mutationRepository;
+    private final S3Service s3Service; // ✅ Agregar S3Service
 
-    public MutationServiceImpl(MutationRepository mutationRepository, ResultFileService resultFileService){
+    public MutationServiceImpl(MutationRepository mutationRepository, 
+                              ResultFileService resultFileService,
+                              S3Service s3Service){ // ✅ Inyectar S3Service
         this.mutationRepository = mutationRepository;
         this.resultFileService = resultFileService;
+        this.s3Service = s3Service; // ✅ Asignar S3Service
     }
 
     @Override
@@ -34,14 +39,16 @@ public class MutationServiceImpl implements MutationService{
         List<Mutation> mutations = new ArrayList<>();
 
         try {
-            URL fileUrl = new URL(resultFile.getS3Url());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fileUrl.openStream()));
+            // ✅ Usar AWS SDK en lugar de URL directa
+            String s3Key = extractS3KeyFromUrl(resultFile.getS3Url());
+            InputStream inputStream = s3Service.downloadFile(s3Key);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
             String line;
             boolean first = true;
             while ((line = reader.readLine()) != null) {
                 if (first) {
-                    first = false;
+                    first = false; // Saltar header del CSV
                     continue;
                 }
 
@@ -60,10 +67,29 @@ public class MutationServiceImpl implements MutationService{
                 mutations.add(mutation);
             }
 
+            reader.close();
+            inputStream.close();
+            
             return mutationRepository.saveAll(mutations);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error reading mutation file", e);
+            throw new RuntimeException("Error reading mutation file: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Extrae la key de S3 desde la URL completa
+     * Ejemplo: https://biotrack-results-files.s3.amazonaws.com/results/1752571461813_38fa3d6b-d486-4337-bd2f-059cb1f10d6b_file.csv
+     * Resultado: results/1752571461813_38fa3d6b-d486-4337-bd2f-059cb1f10d6b_file.csv
+     */
+    private String extractS3KeyFromUrl(String s3Url) {
+        String bucketPattern = ".s3.amazonaws.com/";
+        int keyStartIndex = s3Url.indexOf(bucketPattern);
+        
+        if (keyStartIndex == -1) {
+            throw new IllegalArgumentException("Invalid S3 URL format: " + s3Url);
+        }
+        
+        return s3Url.substring(keyStartIndex + bucketPattern.length());
     }
 }
