@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Service
@@ -87,6 +88,45 @@ public class S3ServiceImpl implements S3Service {
                     .build();
 
             return presigner.presignGetObject(getObjectPresignRequest).url().toString();
+        }
+    }
+
+    // ✅ Nuevos métodos para contenido generado dinámicamente
+    @Override
+    public String uploadTextContent(String content, String keyName) {
+        try {
+            byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(keyName)
+                    .contentType("text/plain")
+                    .contentLength((long) contentBytes.length)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(contentBytes));
+
+            return String.format("https://%s.s3.amazonaws.com/%s", bucketName, keyName);
+        } catch (Exception e) {
+            throw new RuntimeException("Error uploading text content to S3: " + keyName, e);
+        }
+    }
+
+    @Override
+    public String uploadStreamContent(InputStream inputStream, String keyName, String contentType, long contentLength) {
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(keyName)
+                    .contentType(contentType)
+                    .contentLength(contentLength)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
+
+            return String.format("https://%s.s3.amazonaws.com/%s", bucketName, keyName);
+        } catch (Exception e) {
+            throw new RuntimeException("Error uploading stream content to S3: " + keyName, e);
         }
     }
 }
