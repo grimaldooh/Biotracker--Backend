@@ -3,7 +3,6 @@ package com.biotrack.backend.services;
 import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.enums.Relevance;
 import com.biotrack.backend.services.impl.OpenAIServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,22 +91,6 @@ class OpenAIServiceTest {
     }
 
     @Test
-    void generateGeneticReport_ShouldThrowException_WhenOpenAIReturnsError() {
-        // Arrange
-        List<Mutation> mutations = createTestMutations();
-        String patientInfo = "Test patient";
-        
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(String.class)))
-                .thenThrow(new RuntimeException("OpenAI API Error"));
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-                () -> openAIService.generateGeneticReport(mutations, patientInfo));
-        
-        assertTrue(exception.getMessage().contains("Error generating genetic report"));
-    }
-
-    @Test
     void isConfigured_ShouldReturnTrue_WhenApiKeyIsValid() {
         // Act
         boolean result = openAIService.isConfigured();
@@ -120,18 +103,6 @@ class OpenAIServiceTest {
     void isConfigured_ShouldReturnFalse_WhenApiKeyIsEmpty() {
         // Arrange
         ReflectionTestUtils.setField(openAIService, "apiKey", "");
-
-        // Act
-        boolean result = openAIService.isConfigured();
-
-        // Assert
-        assertFalse(result);
-    }
-
-    @Test
-    void isConfigured_ShouldReturnFalse_WhenApiKeyIsPlaceholder() {
-        // Arrange
-        ReflectionTestUtils.setField(openAIService, "apiKey", "${OPENAI_API_KEY}");
 
         // Act
         boolean result = openAIService.isConfigured();

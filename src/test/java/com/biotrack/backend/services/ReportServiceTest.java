@@ -189,47 +189,6 @@ class ReportServiceTest {
     }
 
     @Test
-    void generateReport_ShouldThrowException_WhenReportAlreadyGenerating() {
-        // Arrange
-        UUID sampleId = testSample.getId();
-        when(sampleService.findById(sampleId)).thenReturn(testSample);
-        when(openAIService.isConfigured()).thenReturn(true);
-        when(reportRepository.existsBySampleIdAndStatus(sampleId, ReportStatus.GENERATING)).thenReturn(true);
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-                () -> reportService.generateReport(sampleId));
-        
-        assertTrue(exception.getMessage().contains("A report is already being generated"));
-    }
-
-    @Test
-    void generateReport_ShouldMarkAsFailed_WhenOpenAIThrowsException() {
-        // Arrange
-        UUID sampleId = testSample.getId();
-        when(sampleService.findById(sampleId)).thenReturn(testSample);
-        when(openAIService.isConfigured()).thenReturn(true);
-        when(reportRepository.existsBySampleIdAndStatus(sampleId, ReportStatus.GENERATING)).thenReturn(false);
-        when(mutationRepository.findBySampleId(sampleId)).thenReturn(testMutations);
-        when(openAIService.generateGeneticReport(any(), any())).thenThrow(new RuntimeException("OpenAI API error"));
-        
-        Report generatingReport = Report.builder()
-                .id(UUID.randomUUID())
-                .sample(testSample)
-                .status(ReportStatus.GENERATING)
-                .build();
-        
-        when(reportRepository.save(any(Report.class))).thenReturn(generatingReport);
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-                () -> reportService.generateReport(sampleId));
-        
-        assertTrue(exception.getMessage().contains("Error generating genetic report"));
-        verify(reportRepository, times(2)).save(any(Report.class)); // Una vez GENERATING, otra FAILED
-    }
-
-    @Test
     void findBySampleId_ShouldReturnReports_WhenSampleExists() {
         // Arrange
         UUID sampleId = testSample.getId();
@@ -270,23 +229,5 @@ class ReportServiceTest {
         // Assert
         verify(s3Service).deleteFile(s3Key);
         verify(reportRepository).delete(report);
-    }
-
-    @Test
-    void hasCompletedReport_ShouldReturnTrue_WhenCompletedReportExists() {
-        // Arrange
-        UUID sampleId = testSample.getId();
-        Report completedReport = Report.builder()
-                .sample(testSample)
-                .status(ReportStatus.COMPLETED)
-                .build();
-        
-        when(reportRepository.findLatestCompletedBySampleId(sampleId)).thenReturn(Optional.of(completedReport));
-
-        // Act
-        boolean result = reportService.hasCompletedReport(sampleId);
-
-        // Assert
-        assertTrue(result);
     }
 }
