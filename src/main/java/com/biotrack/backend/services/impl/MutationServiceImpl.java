@@ -32,6 +32,29 @@ public class MutationServiceImpl implements MutationService{
     }
 
     @Override
+    public List<Mutation> search(UUID sampleId, Relevance relevance, String gene) {
+        if (sampleId != null && relevance != null && gene != null)
+            return mutationRepository.findBySampleIdAndRelevanceAndGeneContainingIgnoreCase(sampleId, relevance, gene);
+
+        if (sampleId != null && relevance != null)
+            return mutationRepository.findBySampleIdAndRelevance(sampleId, relevance);
+
+        if (sampleId != null && gene != null)
+            return mutationRepository.findBySampleIdAndGeneContainingIgnoreCase(sampleId, gene);
+
+        if (sampleId != null)
+            return mutationRepository.findBySampleId(sampleId);
+
+        if (relevance != null)
+            return mutationRepository.findByRelevance(relevance);
+
+        if (gene != null)
+            return mutationRepository.findByGeneContainingIgnoreCase(gene);
+
+        return mutationRepository.findAll();
+    }
+
+    @Override
     public List<Mutation> processResultFile(UUID resultFileId) {
         ResultFile resultFile = resultFileService.findById(resultFileId);
         Sample sample = resultFile.getSample();
