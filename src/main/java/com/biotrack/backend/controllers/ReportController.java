@@ -81,7 +81,17 @@ public class ReportController {
         description = "Report list retrieved successfully"
     )
     public ResponseEntity<List<ReportDTO>> getAllReports() {
-        List<ReportDTO> reports = reportService.findByStatus(null).stream()
+        List<ReportDTO> reports = reportService.findByStatus(ReportStatus.COMPLETED).stream()
+                .map(ReportMapper::toDTO)
+                .toList();
+        return ResponseEntity.ok(reports);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ReportDTO>> getAllReportsFixed() {
+        List<Report> allReports = reportService.findAll();
+        List<ReportDTO> reports = allReports.stream()
+                .sorted((r1, r2) -> r2.getGeneratedAt().compareTo(r1.getGeneratedAt()))
                 .map(ReportMapper::toDTO)
                 .toList();
         return ResponseEntity.ok(reports);

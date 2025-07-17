@@ -120,6 +120,12 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public List<Report> findAll(){
+        return reportRepository.findAll();
+    }
+
+
+    @Override
     public Report findById(UUID reportId) {
         return reportRepository.findById(reportId)
                 .orElseThrow(() -> new RuntimeException("Report not found with id: " + reportId));

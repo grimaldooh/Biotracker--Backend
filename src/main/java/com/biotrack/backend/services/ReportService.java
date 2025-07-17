@@ -15,4 +15,5 @@ public interface ReportService {
     void deleteReport(UUID reportId);
     boolean hasCompletedReport(UUID sampleId);
     Report getLatestCompletedReport(UUID sampleId);
+    List<Report> findAll();
 }

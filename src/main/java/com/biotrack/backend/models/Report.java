@@ -23,7 +23,7 @@ public class Report {
     @JoinColumn(name = "sample_id", nullable = false)
     private Sample sample;
     
-    @Column(name = "s3_key")
+    @Column(name = "s3_key", nullable = true)
     private String s3Key;
     
     @Column(name = "s3url") // Nota: usar el mismo nombre que tienes en otras tablas
