@@ -16,4 +16,5 @@ public interface ReportService {
     boolean hasCompletedReport(UUID sampleId);
     Report getLatestCompletedReport(UUID sampleId);
     List<Report> findAll();
+    Report generateClinicalReport(UUID sampleId, String patientInfo);
 }

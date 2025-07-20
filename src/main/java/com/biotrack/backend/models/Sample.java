@@ -1,43 +1,49 @@
 package com.biotrack.backend.models;
 
-import com.biotrack.backend.models.enums.Role;
-import jakarta.persistence.*;
-import lombok.*;
-
 import com.biotrack.backend.models.enums.SampleStatus;
 import com.biotrack.backend.models.enums.SampleType;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
 import java.time.LocalDate;
-import java.util.Locale;
 import java.util.UUID;
 
 @Entity
-@Table(name = "samples")
+@Table(name = "sample") 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Sample {
+@SuperBuilder
+@NoArgsConstructor // <-- Agrega esto
+@Inheritance(strategy = InheritanceType.JOINED)
+public abstract class Sample {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+    @GeneratedValue
+    protected UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    protected Patient patient;
 
     @ManyToOne
-    @JoinColumn(name = "registered_by")
-    private User registeredBy;
+    protected User registeredBy;
 
     @Enumerated(EnumType.STRING)
-    private SampleType type;
+    protected SampleType type;
 
     @Enumerated(EnumType.STRING)
-    private SampleStatus status;
+    protected SampleStatus status;
 
-    private LocalDate collectionDate;
-    private String notes;
+    protected LocalDate collectionDate;
+    protected String notes;
+    protected LocalDate createdAt;
 
-    private LocalDate createdAt;
+    // Métodos abstractos si necesitas lógica específica
+    public abstract SampleType getSampleType();
+    public abstract String getSampleTypeDescription();
+    public abstract boolean isGeneticAnalysisRequired();
+    public abstract boolean isValidForProcessing();
+    public abstract String getSpecificSampleInfo();
+
 }

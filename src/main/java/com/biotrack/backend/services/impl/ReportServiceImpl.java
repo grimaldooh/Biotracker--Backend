@@ -110,6 +110,61 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional
+    public Report generateClinicalReport(UUID sampleId, String patientInfo) {
+        Sample sample = sampleService.findById(sampleId);
+
+        if (!openAIService.isConfigured()) {
+            throw new RuntimeException("OpenAI service is not configured. Please check API key configuration.");
+        }
+
+        long startTime = System.currentTimeMillis();
+
+        // Crear reporte inicial
+        Report report = Report.builder()
+                .sample(sample)
+                .status(ReportStatus.GENERATING)
+                .generatedAt(LocalDateTime.now())
+                .openaiModel(openAIService.getModelUsed())
+                .build();
+
+        report = reportRepository.save(report);
+
+        try {
+            // Construir contexto clínico completo
+            String patientContext = buildPatientContext(sample, patientInfo);
+
+            // Puedes agregar aquí los datos específicos de la muestra (blood, dna, saliva)
+            String sampleInfo = sample.getSpecificSampleInfo();
+            String fullContext = patientContext + "\n" + sampleInfo;
+
+            // Generar reporte clínico con OpenAI (sin mutaciones)
+            String reportContent = openAIService.generateClinicalReport(fullContext);
+
+            // Subir reporte a S3
+            String s3Key = generateReportS3Key(report.getId());
+            String s3Url = s3Service.uploadTextContent(reportContent, s3Key);
+
+            long processingTime = System.currentTimeMillis() - startTime;
+
+            report.setS3Key(s3Key);
+            report.setS3Url(s3Url);
+            report.setFileSize((long) reportContent.getBytes().length);
+            report.setProcessingTimeMs(processingTime);
+            report.setStatus(ReportStatus.COMPLETED);
+
+            return reportRepository.save(report);
+
+        } catch (Exception e) {
+            report.setStatus(ReportStatus.FAILED);
+            report.setProcessingTimeMs(System.currentTimeMillis() - startTime);
+            reportRepository.save(report);
+
+            throw new RuntimeException("Error generating clinical report: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public List<Report> findBySampleId(UUID sampleId) {
         return reportRepository.findBySampleIdOrderByGeneratedAtDesc(sampleId);
     }

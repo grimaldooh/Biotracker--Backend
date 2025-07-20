@@ -156,6 +156,83 @@ public class OpenAIServiceImpl implements OpenAIService {
         return prompt.toString();
     }
 
+    @Override
+    public String generateClinicalReport(String patientInfo) {
+        if (!isConfigured()) {
+            throw new RuntimeException("OpenAI service is not properly configured");
+        }
+
+        try {
+            String prompt = buildClinicalPrompt(patientInfo);
+            Map<String, Object> requestBody = buildRequestBody(prompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("Content-Type", "application/json");
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            return extractResponseContent(response.getBody());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating clinical report with OpenAI: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Construye el prompt clínico para cualquier tipo de muestra (sangre, saliva, ADN).
+     */
+    private String buildClinicalPrompt(String patientInfo) {
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("You are a board-certified clinical laboratory specialist. ");
+        prompt.append("Analyze the following patient and sample information and generate a comprehensive clinical report in English.\n\n");
+
+        prompt.append("PATIENT & SAMPLE CONTEXT:\n");
+        prompt.append(patientInfo != null ? patientInfo : "Patient and sample information not provided");
+        prompt.append("\n\n");
+
+        prompt.append("REPORT REQUIREMENTS:\n");
+        prompt.append("Please structure your analysis as follows:\n\n");
+
+        prompt.append("1. EXECUTIVE SUMMARY\n");
+        prompt.append("   • Key findings and overall assessment\n\n");
+
+        prompt.append("2. SAMPLE ANALYSIS\n");
+        prompt.append("   • Interpretation of clinical values and laboratory results\n");
+        prompt.append("   • Highlight abnormal or critical findings\n\n");
+
+        prompt.append("3. CLINICAL SIGNIFICANCE\n");
+        prompt.append("   • Disease associations or risk factors\n");
+        prompt.append("   • Phenotypic implications if relevant\n\n");
+
+        prompt.append("4. RECOMMENDATIONS\n");
+        prompt.append("   • Monitoring, follow-up, or additional testing\n");
+        prompt.append("   • Lifestyle or therapeutic suggestions if appropriate\n\n");
+
+        prompt.append("5. LIMITATIONS\n");
+        prompt.append("   • Technical or clinical limitations\n\n");
+
+        prompt.append("FORMAT GUIDELINES:\n");
+        prompt.append("• Use clear, professional medical language\n");
+        prompt.append("• Maintain objectivity and evidence-based interpretations\n");
+        prompt.append("• Clearly distinguish between established facts and recommendations\n");
+
+        // Check prompt length (optional)
+        if (prompt.length() > 8000) {
+            throw new RuntimeException("Prompt too long. Consider reducing patient/sample info.");
+        }
+
+        return prompt.toString();
+    }
+
     /**
      * Construye el cuerpo de la petición para OpenAI
      */

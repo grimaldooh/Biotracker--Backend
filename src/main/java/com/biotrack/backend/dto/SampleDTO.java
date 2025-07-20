@@ -25,5 +25,11 @@ public record SampleDTO(
 
         LocalDate collectionDate,
 
-        String notes
+        String notes,
+
+        BloodSampleDataDTO bloodData,
+
+        DnaSampleDataDTO dnaData,
+
+        SalivaSampleDataDTO salivaData
 ) {}

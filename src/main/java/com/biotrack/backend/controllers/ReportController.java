@@ -71,6 +71,42 @@ public class ReportController {
         }
     }
 
+    @PostMapping("/generate-clinical")
+    @Operation(
+        summary = "Generate AI clinical report",
+        description = "Generate a clinical report using AI for any sample type (blood, saliva, dna), even if there are no mutations"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Clinical report generated successfully",
+            content = @Content(schema = @Schema(implementation = ReportDTO.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid sample ID"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Sample not found"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error generating report or OpenAI service unavailable"
+        )
+    })
+    public ResponseEntity<ReportDTO> generateClinicalReport(
+            @RequestParam UUID sampleId,
+            @RequestParam(required = false) String patientInfo
+    ) {
+        try {
+            Report report = reportService.generateClinicalReport(sampleId, patientInfo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(ReportMapper.toDTO(report));
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating clinical report: " + e.getMessage(), e);
+        }
+    }
+
     @GetMapping
     @Operation(
         summary = "Get all reports",

@@ -1,7 +1,9 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.SampleCreationDTO;
 import com.biotrack.backend.dto.SampleDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
+import com.biotrack.backend.factories.SampleFactory;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.User;
@@ -62,14 +64,18 @@ public class SampleController {
             description = "Patient or technician not found"
         )
     })
-    public ResponseEntity<SampleDTO> create(@Valid @RequestBody SampleDTO sampleDTO){
+    public ResponseEntity<SampleDTO> create(@Valid @RequestBody SampleCreationDTO sampleDTO){
         Patient patient = patientService.findById(sampleDTO.patientId());
         User technician = userService.getUserById(sampleDTO.registeredById());
 
-        Sample sample = SampleMapper.toEntity(sampleDTO, patient, technician);
+        Sample sample = SampleFactory.create(sampleDTO, patient, technician);
         Sample created = sampleService.create(sample);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(SampleMapper.toDTO(created));
+        // Busca la entidad concreta por ID y mapea a DTO específico
+        Sample fullSample = sampleService.findById(created.getId());
+        SampleDTO dto = SampleMapper.toDTO(fullSample);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @GetMapping
@@ -135,14 +141,15 @@ public class SampleController {
     public ResponseEntity<SampleDTO> update(
         @Parameter(description = "Unique identifier of the genetic sample") 
         @PathVariable UUID id, 
-        @Valid @RequestBody SampleDTO sampleDTO
+        @Valid @RequestBody SampleCreationDTO sampleDTO
     ){
         Sample existing = sampleService.findById(id);
 
-        Sample updated = SampleMapper.toEntity(
-                sampleDTO,
-                existing.getPatient(),
-                existing.getRegisteredBy()
+        // Usa el factory para construir la entidad actualizada
+        Sample updated = SampleFactory.create(
+            sampleDTO, // Si tu factory espera SampleCreationDTO, convierte SampleDTO a SampleCreationDTO aquí
+            existing.getPatient(),
+            existing.getRegisteredBy()
         );
         Sample saved = sampleService.update(id, updated);
         return ResponseEntity.ok(SampleMapper.toDTO(saved));
