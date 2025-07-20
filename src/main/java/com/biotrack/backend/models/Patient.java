@@ -6,6 +6,8 @@ import lombok.*;
 import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,4 +36,6 @@ public class Patient{
 
     private LocalDate createdAt;
 
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClinicalHistoryRecord> clinicalHistoryRecords = new ArrayList<>();
 }

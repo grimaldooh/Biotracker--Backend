@@ -1,6 +1,8 @@
 package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.Mutation;
+import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.services.OpenAIService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -234,6 +236,36 @@ public class OpenAIServiceImpl implements OpenAIService {
     }
 
     /**
+     * Construye el prompt clínico para la historia médica de un paciente.
+     */
+    private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> visits, List<String> reportContents) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are a board-certified physician. Generate a comprehensive clinical summary for the following patient.\n\n");
+        prompt.append("PATIENT INFORMATION:\n");
+        prompt.append("- Name: ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\n");
+        prompt.append("- Gender: ").append(patient.getGender()).append("\n");
+        prompt.append("- Birth Date: ").append(patient.getBirthDate()).append("\n");
+        prompt.append("- CURP: ").append(patient.getCurp()).append("\n\n");
+
+        prompt.append("MEDICAL VISIT HISTORY:\n");
+        for (MedicalVisit visit : visits) {
+            prompt.append("• Date: ").append(visit.getVisitDate()).append("\n");
+            prompt.append("  Diagnosis: ").append(visit.getDiagnosis()).append("\n");
+            prompt.append("  Recommendations: ").append(visit.getRecommendations()).append("\n");
+            prompt.append("  Notes: ").append(visit.getNotes()).append("\n\n");
+        }
+
+        prompt.append("RECENT STUDY REPORTS:\n");
+        for (String content : reportContents) {
+            prompt.append(content).append("\n\n");
+        }
+
+        prompt.append("Please summarize the patient's clinical history, highlight important diagnoses, risk factors, and relevant findings from recent studies. Provide recommendations for future care and follow-up.\n");
+
+        return prompt.toString();
+    }
+
+    /**
      * Construye el cuerpo de la petición para OpenAI
      */
     private Map<String, Object> buildRequestBody(String prompt) {
@@ -274,6 +306,34 @@ public class OpenAIServiceImpl implements OpenAIService {
             
         } catch (Exception e) {
             throw new RuntimeException("Error parsing OpenAI response: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String generateClinicalHistorySummary(String prompt) {
+        if (!isConfigured()) {
+            throw new RuntimeException("OpenAI service is not properly configured");
+        }
+        try {
+            Map<String, Object> requestBody = buildRequestBody(prompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("Content-Type", "application/json");
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            return extractResponseContent(response.getBody());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating clinical history summary with OpenAI: " + e.getMessage(), e);
         }
     }
 }

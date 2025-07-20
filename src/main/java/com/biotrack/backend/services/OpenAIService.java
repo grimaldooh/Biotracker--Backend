@@ -9,4 +9,5 @@ public interface OpenAIService {
     String generateClinicalReport(String patientInfo);
     boolean isConfigured();
     String getModelUsed();
+    String generateClinicalHistorySummary(String prompt);
 }

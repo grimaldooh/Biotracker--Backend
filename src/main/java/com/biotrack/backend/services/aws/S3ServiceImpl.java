@@ -129,4 +129,13 @@ public class S3ServiceImpl implements S3Service {
             throw new RuntimeException("Error uploading stream content to S3: " + keyName, e);
         }
     }
+
+    @Override
+    public String downloadTextContent(String keyName) {
+        try (InputStream inputStream = downloadFile(keyName)) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Error downloading text content from S3: " + keyName, e);
+        }
+    }
 }

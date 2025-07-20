@@ -1,9 +1,12 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.ClinicalHistoryRecordDTO;
 import com.biotrack.backend.dto.PatientDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
+import com.biotrack.backend.models.ClinicalHistoryRecord;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.services.PatientService;
+import com.biotrack.backend.utils.ClinicalHistoryRecordMapper;
 import com.biotrack.backend.utils.PatientMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -149,6 +152,18 @@ public class PatientController {
     ){
         patientService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/generate-summary/{patientId}")
+    public ResponseEntity<ClinicalHistoryRecordDTO> generateSummary(@PathVariable UUID patientId) {
+        ClinicalHistoryRecord record = patientService.generatePatientClinicalSummary(patientId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ClinicalHistoryRecordMapper.toDTO(record));
+    }
+
+    @GetMapping("/latest/{patientId}")
+    public ResponseEntity<ClinicalHistoryRecordDTO> getLatestSummary(@PathVariable UUID patientId) {
+        ClinicalHistoryRecord record = patientService.getLatestRecord(patientId);
+        return ResponseEntity.ok(ClinicalHistoryRecordMapper.toDTO(record));
     }
 
     // Exception handlers con tipos específicos

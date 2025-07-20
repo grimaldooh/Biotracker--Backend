@@ -1,5 +1,6 @@
 package com.biotrack.backend.services;
 
+import com.biotrack.backend.models.ClinicalHistoryRecord;
 import com.biotrack.backend.models.Patient;
 
 import java.util.List;
@@ -11,4 +12,6 @@ public interface PatientService {
     Patient findById(UUID id);
     Patient update(UUID id, Patient updatedPatient);
     void deleteById(UUID id);
+    ClinicalHistoryRecord generatePatientClinicalSummary(UUID patientId);
+    ClinicalHistoryRecord getLatestRecord(UUID patientId);
 }

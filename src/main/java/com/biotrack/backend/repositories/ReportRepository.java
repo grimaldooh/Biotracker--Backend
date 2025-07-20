@@ -23,6 +23,9 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     @Query("SELECT r FROM Report r WHERE r.sample.id = :sampleId AND r.status = 'COMPLETED' ORDER BY r.generatedAt DESC LIMIT 1")
     Optional<Report> findLatestCompletedBySampleId(@Param("sampleId") UUID sampleId);
     
+    @Query("SELECT r FROM Report r WHERE r.sample.patient.id = :patientId ORDER BY r.generatedAt DESC")
+    List<Report> findByPatientIdOrderByGeneratedAtDesc(UUID patientId);
+    
     boolean existsBySampleIdAndStatus(UUID sampleId, ReportStatus status);
 
     void deleteAllBySampleId(UUID id);

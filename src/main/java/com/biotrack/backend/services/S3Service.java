@@ -12,4 +12,5 @@ public interface S3Service {
     
     String uploadTextContent(String content, String keyName);
     String uploadStreamContent(InputStream inputStream, String keyName, String contentType, long contentLength);
+    String downloadTextContent(String keyName);
 }
