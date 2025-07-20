@@ -4,6 +4,7 @@ import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.repositories.PatientRepository;
 import com.biotrack.backend.services.PatientService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    @Transactional
     public Patient update(UUID id , Patient patient){
         Patient existing = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
@@ -47,6 +49,7 @@ public class PatientServiceImpl implements PatientService {
 
 
     @Override
+    @Transactional
     public void deleteById(UUID id){
         patientRepository.deleteById(id);
     }

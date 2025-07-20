@@ -4,6 +4,7 @@ import com.biotrack.backend.models.User;
 import com.biotrack.backend.repositories.UserRepository;
 import com.biotrack.backend.services.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,11 +35,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUserById(UUID id) {
         userRepository.deleteById(id);
     }
 
     @Override
+    @Transactional
     public User updateUser(UUID id, User updatedUser) {
         User existing = getUserById(id);
         existing.setName(updatedUser.getName());

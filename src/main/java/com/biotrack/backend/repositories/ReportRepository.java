@@ -24,4 +24,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     Optional<Report> findLatestCompletedBySampleId(@Param("sampleId") UUID sampleId);
     
     boolean existsBySampleIdAndStatus(UUID sampleId, ReportStatus status);
+
+    void deleteAllBySampleId(UUID id);
 }

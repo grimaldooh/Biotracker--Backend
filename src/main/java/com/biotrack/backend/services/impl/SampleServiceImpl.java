@@ -1,5 +1,6 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.repositories.ReportRepository;
 import com.biotrack.backend.repositories.SampleRepository;
 import com.biotrack.backend.services.SampleService;
 import com.biotrack.backend.models.BloodSample;
@@ -7,6 +8,7 @@ import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.models.Sample;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,9 +17,11 @@ import java.util.UUID;
 public class SampleServiceImpl implements SampleService {
 
     private final SampleRepository sampleRepository;
+    private final ReportRepository reportRepository;
 
-    public SampleServiceImpl(SampleRepository sampleRepository){
+    public SampleServiceImpl(SampleRepository sampleRepository, ReportRepository reportRepository){
         this.sampleRepository = sampleRepository;
+        this.reportRepository = reportRepository;
     }
 
     @Override
@@ -37,11 +41,16 @@ public class SampleServiceImpl implements SampleService {
     }
 
     @Override
+    @Transactional
     public void deleteById(UUID id){
+        // Elimina primero los reportes relacionados
+        reportRepository.deleteAllBySampleId(id);
+        // Ahora elimina el sample
         sampleRepository.deleteById(id);
     }
 
     @Override
+    @Transactional
     public Sample update(UUID id, Sample updatedSample) {
         Sample existing = findById(id);
 
