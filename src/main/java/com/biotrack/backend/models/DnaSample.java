@@ -121,21 +121,31 @@ public class DnaSample extends Sample {
     }
 
     @Override
-    public String getSpecificSampleInfo() {
+    public String getSpecificSampleTypeInfo() {
         StringBuilder info = new StringBuilder();
         info.append("DNA Sample Analysis:\n");
-        if (concentrationNgUl != null) {
-            info.append("- DNA Concentration: ").append(concentrationNgUl).append(" ng/μL\n");
-        }
-        if (purity260280Ratio != null) {
-            info.append("- Purity (260/280): ").append(purity260280Ratio).append("\n");
-        }
-        if (sequencingDepth != null) {
-            info.append("- Sequencing Depth: ").append(sequencingDepth).append("x\n");
-        }
-        if (variantsDetected != null) {
-            info.append("- Variants Detected: ").append(variantsDetected).append("\n");
-        }
+        info.append("- DNA Concentration: ").append(concentrationNgUl).append(" ng/μL\n");
+        info.append("- Purity (260/280): ").append(purity260280Ratio).append("\n");
+        info.append("- Purity (260/230): ").append(purity260230Ratio).append("\n");
+        info.append("- Integrity Number: ").append(integrityNumber).append("\n");
+        info.append("- Extraction Date: ").append(extractionDate).append("\n");
+        info.append("- Extraction Technician: ").append(extractionTechnician).append("\n");
+        info.append("- Storage Buffer: ").append(storageBuffer).append("\n");
+        info.append("- Aliquot Volume: ").append(aliquotVolumeUl).append(" μL\n");
+        info.append("- Freezer Location: ").append(freezerLocation).append("\n");
+        info.append("- Sequencing Platform: ").append(sequencingPlatform).append("\n");
+        info.append("- Sequencing Depth: ").append(sequencingDepth).append("x\n");
+        info.append("- Library Prep Protocol: ").append(libraryPrepProtocol).append("\n");
+        info.append("- Total Reads: ").append(totalReads).append("\n");
+        info.append("- Mapped Reads: ").append(mappedReads).append("\n");
+        info.append("- Mapping Quality Score: ").append(mappingQualityScore).append("\n");
+        info.append("- Variants Detected: ").append(variantsDetected).append("\n");
+        info.append("- SNPs Detected: ").append(snpsDetected).append("\n");
+        info.append("- Indels Detected: ").append(indelsDetected).append("\n");
+        info.append("- FASTQ R1 URL: ").append(fastqR1Url).append("\n");
+        info.append("- FASTQ R2 URL: ").append(fastqR2Url).append("\n");
+        info.append("- VCF File URL: ").append(vcfFileUrl).append("\n");
+        info.append("- BAM File URL: ").append(bamFileUrl).append("\n");
         return info.toString();
     }
 
@@ -147,6 +157,16 @@ public class DnaSample extends Sample {
 
     public boolean hasAdequateCoverage() {
         return sequencingDepth != null && sequencingDepth >= 30;
+    }
+
+    @Override
+    public String getSpecificSampleInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Sample Type: ").append(type != null ? type.name() : "N/A").append("\n");
+        info.append("Extraction Method: ").append(extractionMethod != null ? extractionMethod.name() : "N/A").append("\n");
+        info.append("Collection Date: ").append(collectionDate != null ? collectionDate.toString() : "N/A").append("\n");
+        info.append("Notes: ").append(notes != null ? notes : "N/A").append("\n");
+        return info.toString();
     }
 }
 

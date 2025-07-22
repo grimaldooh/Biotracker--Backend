@@ -108,6 +108,9 @@ public class SampleFactory {
                     .cellCountPerMl(data.getCellCountPerMl())
                     .collectionMethod(SalivaCollectionMethod.fromDto(data.getCollectionMethod()))
                     .fastingStatus(data.getFastingStatus())
+                    .contaminationLevel(data.getContaminationLevel())
+                    .preservativeUsed(data.getPreservativeUsed())
+                    .timeToProcessingHours(data.getTimeToProcessingHours())
                     .build();
             }
             default:

@@ -1,6 +1,8 @@
 package com.biotrack.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
@@ -95,6 +97,7 @@ public class BloodSampleDataDTO {
     private BigDecimal chlorideMeqL;
     
     // === MARCADORES INFLAMATORIOS ===
+    @JsonProperty("cReactiveProteinMgL")
     @DecimalMin(value = "0.0", message = "C-reactive protein level cannot be negative")
     private BigDecimal cReactiveProteinMgL;
     

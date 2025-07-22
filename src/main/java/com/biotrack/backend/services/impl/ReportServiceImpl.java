@@ -1,7 +1,10 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.models.BloodSample;
+import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.Report;
+import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.enums.ReportStatus;
 import com.biotrack.backend.repositories.MutationRepository;
@@ -136,7 +139,9 @@ public class ReportServiceImpl implements ReportService {
 
             // Puedes agregar aquí los datos específicos de la muestra (blood, dna, saliva)
             String sampleInfo = sample.getSpecificSampleInfo();
-            String fullContext = patientContext + "\n" + sampleInfo;
+            String sampleTypeInfo = sample.getSpecificSampleTypeInfo();
+            
+            String fullContext = patientContext + "\n" + sampleInfo + "\n" + sampleTypeInfo;
 
             // Generar reporte clínico con OpenAI (sin mutaciones)
             String reportContent = openAIService.generateClinicalReport(fullContext);

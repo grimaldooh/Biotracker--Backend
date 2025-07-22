@@ -7,6 +7,7 @@ import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.models.Sample;
+import com.biotrack.backend.models.enums.SampleType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,18 @@ public class SampleServiceImpl implements SampleService {
 
     @Override
     public Sample create(Sample sample){
+        if (sample instanceof BloodSample) {
+            BloodSample bloodSample = (BloodSample) sample;
+            bloodSample.setType(SampleType.BLOOD);
+        } else if (sample instanceof DnaSample) {
+            DnaSample dnaSample = (DnaSample) sample;
+            dnaSample.setType(SampleType.DNA);
+        } else if (sample instanceof SalivaSample) {
+            SalivaSample salivaSample = (SalivaSample) sample;
+            salivaSample.setType(SampleType.SALIVA);
+        } else {
+            throw new IllegalArgumentException("Unsupported sample type");
+        }
         return sampleRepository.save(sample);
     }
 
@@ -48,6 +61,9 @@ public class SampleServiceImpl implements SampleService {
         // Ahora elimina el sample
         sampleRepository.deleteById(id);
     }
+
+
+
 
     @Override
     @Transactional

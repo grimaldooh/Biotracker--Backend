@@ -70,18 +70,28 @@ public class SalivaSample extends Sample {
     }
 
     @Override
-    public String getSpecificSampleInfo() {
+    public String getSpecificSampleTypeInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Saliva Sample Analysis:\n");
-        if (volumeMl != null) {
-            info.append("- Volume: ").append(volumeMl).append(" mL\n");
-        }
-        if (dnaYieldNg != null) {
-            info.append("- DNA Yield: ").append(dnaYieldNg).append(" ng\n");
-        }
-        if (collectionMethod != null) {
-            info.append("- Collection Method: ").append(collectionMethod).append("\n");
-        }
+        info.append("- Volume: ").append(volumeMl).append(" mL\n");
+        info.append("- pH Level: ").append(phLevel).append("\n");
+        info.append("- Viscosity: ").append(viscosity).append("\n");
+        info.append("- DNA Yield: ").append(dnaYieldNg).append(" ng\n");
+        info.append("- Cell Count per mL: ").append(cellCountPerMl).append("\n");
+        info.append("- Fasting Status: ").append(fastingStatus).append("\n");
+        info.append("- Contamination Level: ").append(contaminationLevel).append("\n");
+        info.append("- Preservative Used: ").append(preservativeUsed).append("\n");
+        info.append("- Time to Processing (hours): ").append(timeToProcessingHours).append("\n");
+        return info.toString();
+    }
+
+    @Override
+    public String getSpecificSampleInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Sample Type: ").append(type != null ? type.name() : "N/A").append("\n");
+        info.append("Collection Method: ").append(collectionMethod).append("\n");
+        info.append("Collection Date: ").append(collectionDate != null ? collectionDate.toString() : "N/A").append("\n");
+        info.append("Notes: ").append(notes != null ? notes : "N/A").append("\n");
         return info.toString();
     }
 }

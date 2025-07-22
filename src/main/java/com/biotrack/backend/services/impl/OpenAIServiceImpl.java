@@ -204,6 +204,12 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("REPORT REQUIREMENTS:\n");
         prompt.append("Please structure your analysis as follows:\n\n");
 
+        prompt.append("SAMPLE INFORMATION:\n");
+        prompt.append("• Type of sample (e.g., blood, saliva, DNA)\n");
+        prompt.append("• Analyzer Model used (BLOOD type only) || Extraction Method (DNA Only) || Collection Method (Saliva Only)\n");
+        prompt.append("• Collection date\n");
+        prompt.append("• Lab notes\n");
+
         prompt.append("1. EXECUTIVE SUMMARY\n");
         prompt.append("   • Key findings and overall assessment\n\n");
 
@@ -235,36 +241,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         return prompt.toString();
     }
 
-    /**
-     * Construye el prompt clínico para la historia médica de un paciente.
-     */
-    private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> visits, List<String> reportContents) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("You are a board-certified physician. Generate a comprehensive clinical summary for the following patient.\n\n");
-        prompt.append("PATIENT INFORMATION:\n");
-        prompt.append("- Name: ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\n");
-        prompt.append("- Gender: ").append(patient.getGender()).append("\n");
-        prompt.append("- Birth Date: ").append(patient.getBirthDate()).append("\n");
-        prompt.append("- CURP: ").append(patient.getCurp()).append("\n\n");
-
-        prompt.append("MEDICAL VISIT HISTORY:\n");
-        for (MedicalVisit visit : visits) {
-            prompt.append("• Date: ").append(visit.getVisitDate()).append("\n");
-            prompt.append("  Diagnosis: ").append(visit.getDiagnosis()).append("\n");
-            prompt.append("  Recommendations: ").append(visit.getRecommendations()).append("\n");
-            prompt.append("  Notes: ").append(visit.getNotes()).append("\n\n");
-        }
-
-        prompt.append("RECENT STUDY REPORTS:\n");
-        for (String content : reportContents) {
-            prompt.append(content).append("\n\n");
-        }
-
-        prompt.append("Please summarize the patient's clinical history, highlight important diagnoses, risk factors, and relevant findings from recent studies. Provide recommendations for future care and follow-up.\n");
-
-        return prompt.toString();
-    }
-
+   
     /**
      * Construye el cuerpo de la petición para OpenAI
      */

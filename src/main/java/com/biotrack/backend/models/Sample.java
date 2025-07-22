@@ -45,5 +45,6 @@ public abstract class Sample {
     public abstract boolean isGeneticAnalysisRequired();
     public abstract boolean isValidForProcessing();
     public abstract String getSpecificSampleInfo();
+    public abstract String getSpecificSampleTypeInfo();
 
 }

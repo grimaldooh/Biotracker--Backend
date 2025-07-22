@@ -70,6 +70,7 @@ public class SampleController {
 
         Sample sample = SampleFactory.create(sampleDTO, patient, technician);
         Sample created = sampleService.create(sample);
+        
 
         // Busca la entidad concreta por ID y mapea a DTO específico
         Sample fullSample = sampleService.findById(created.getId());

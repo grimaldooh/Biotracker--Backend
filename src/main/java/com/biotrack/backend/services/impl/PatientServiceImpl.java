@@ -1,9 +1,12 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.ClinicalHistoryRecord;
+import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Report;
+import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.repositories.ClinicalHistoryRecordRepository;
 import com.biotrack.backend.repositories.MedicalVisitRepository;
 import com.biotrack.backend.repositories.PatientRepository;
@@ -98,7 +101,7 @@ public class PatientServiceImpl implements PatientService {
         .toList();
 
     // 4. Construir prompt para OpenAI
-    String prompt = buildClinicalHistoryPrompt(patient, visits, reportContents);
+    String prompt = buildClinicalHistoryPrompt(patient, visits, reports);
 
     // 5. Generar resumen con OpenAI
     String summary = openAIService.generateClinicalHistorySummary(prompt);
@@ -124,9 +127,11 @@ public ClinicalHistoryRecord getLatestRecord(UUID patientId) {
     return clinicalHistoryRecordRepository.findTopByPatientIdOrderByCreatedAtDesc(patientId);
 } 
 
-private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> visits, List<String> reportContents) {
+private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> visits, List<Report> reports) {
     StringBuilder prompt = new StringBuilder();
-    prompt.append("You are a board-certified physician. Generate a comprehensive clinical summary for the following patient.\n\n");
+    prompt.append("You are a board-certified physician. Your task is to generate a comprehensive clinical summary for the following patient. \n")
+          .append("You MUST strictly follow the structure shown in the EXAMPLE at the end of this prompt. For each medical visit and each study report, ALWAYS display the date and a clear summary as shown. Do not omit any visit or report. Do not invent data. Use the real data provided.\n\n");
+
     prompt.append("PATIENT INFORMATION:\n");
     prompt.append("- Name: ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\n");
     prompt.append("- Gender: ").append(patient.getGender()).append("\n");
@@ -134,19 +139,86 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
     prompt.append("- CURP: ").append(patient.getCurp()).append("\n\n");
 
     prompt.append("MEDICAL VISIT HISTORY:\n");
+    prompt.append("For each visit, display the date and a concise summary including diagnosis, recommendations, and relevant notes.\n");
     for (MedicalVisit visit : visits) {
-        prompt.append("• Date: ").append(visit.getVisitDate()).append("\n");
-        prompt.append("  Diagnosis: ").append(visit.getDiagnosis()).append("\n");
-        prompt.append("  Recommendations: ").append(visit.getRecommendations()).append("\n");
-        prompt.append("  Notes: ").append(visit.getNotes()).append("\n\n");
+        prompt.append("Visit Date: ").append(visit.getVisitDate()).append("\n");
+        prompt.append("Summary: ");
+        prompt.append("Diagnosis: ").append(visit.getDiagnosis()).append(". ");
+        prompt.append("Recommendations: ").append(visit.getRecommendations()).append(". ");
+        prompt.append("Notes: ").append(visit.getNotes()).append("\n\n");
     }
 
     prompt.append("RECENT STUDY REPORTS:\n");
-    for (String content : reportContents) {
+    prompt.append("For each study, display the collection date, sample type, and a summary of the main findings. If available, include analyzer model (for blood), extraction method (for DNA), or collection method (for saliva).\n");
+    for (Report report : reports) {
+        var sample = report.getSample();
+        prompt.append("Study Date: ").append(sample.getCollectionDate()).append("\n");
+        prompt.append("Sample Type: ").append(sample.getType()).append("\n");
+        if (sample instanceof BloodSample blood) {
+            prompt.append("Analyzer Model: ").append(blood.getAnalyzerModel()).append("\n");
+        }
+        if (sample instanceof DnaSample dna) {
+            prompt.append("Extraction Method: ").append(dna.getExtractionMethod()).append("\n");
+        }
+        if (sample instanceof SalivaSample saliva) {
+            prompt.append("Collection Method: ").append(saliva.getCollectionMethod()).append("\n");
+        }
+        prompt.append("Main Findings: ");
+        String content = s3Service.downloadTextContent(report.getS3Key());
         prompt.append(content).append("\n\n");
     }
 
-    prompt.append("Please summarize the patient's clinical history, highlight important diagnoses, risk factors, and relevant findings from recent studies. Provide recommendations for future care and follow-up.\n");
+    prompt.append("INSTRUCTIONS FOR THE SUMMARY:\n");
+    prompt.append("- For each medical visit, explicitly state the date and summarize the diagnosis, recommendations, and notes.\n");
+    prompt.append("- For each study report, explicitly state the collection date, sample type,include analyzer model (for blood), extraction method (for DNA), or collection method (for saliva) and summarize the main findings.\n");
+    prompt.append("- Highlight important diagnoses, risk factors, and relevant findings from recent studies.\n");
+    prompt.append("- Provide clear recommendations for future care and follow-up.\n");
+
+    // === EXAMPLE STRUCTURE ===
+    prompt.append("IMPORTANT: The following is ONLY AN EXAMPLE OF THE STRUCTURE you must follow. DO NOT invent or copy this data. ALWAYS use the real patient data provided above.\n\n");
+    prompt.append("PATIENT SUMMARY:\n\n");
+    prompt.append("Patient Name: Name\n");
+    prompt.append("Date of Birth: Birthdate\n");
+    prompt.append("CURP: Curp\n\n");
+    prompt.append("MEDICAL VISIT HISTORY:\n\n");
+    prompt.append("1. Visit Date: 2025-07-01(Example)\n");
+    prompt.append("   - Diagnosis: Diagnosis resume\n");
+    prompt.append("   - Recommendations: Recommendation resume\n");
+    prompt.append("   - Notes: Notes resume\n\n");
+    prompt.append("2. Visit Date: 2025-07-10\n");
+    prompt.append("   - Diagnosis: \n");
+    prompt.append("   - Recommendations: \n");
+    prompt.append("   - Notes: \n\n");
+    prompt.append("3. Visit Date: 2025-07-18\n");
+    prompt.append("   - Diagnosis:\n");
+    prompt.append("   - Recommendations: \n");
+    prompt.append("   - Notes: \n\n");
+    prompt.append("//More medical visits can be shown depending on the amount of visits that were passed on prompt\n\n");
+    prompt.append("RECENT STUDY REPORTS:\n\n");
+    prompt.append("1. Study Date: 2025-07-19 (Example)\n");
+    prompt.append("   - Sample Type: Blood (Example)\n");
+    prompt.append("   - Analyzer Model: Sysmex XN-1000 (Example)\n");
+    prompt.append("   - Main Findings: The patient presented with abnormal levels of glucose, total cholesterol, LDL cholesterol, and triglycerides, suggesting …(Example)\n\n");
+    prompt.append("2. Study Date: \n");
+    prompt.append("   - Sample Type: \n");
+    prompt.append("   - Analyzer Model: \n");
+    prompt.append("   - Main Findings: \n\n");
+    prompt.append("3. Study Date: \n");
+    prompt.append("   - Sample Type: DNA (Example)\n");
+    prompt.append("   - Extraction Method: Silica Column (Example)\n");
+    prompt.append("   - Main Findings:\n\n");
+    prompt.append("4. Study Date: \n");
+    prompt.append("   - Sample Type: Blood (Example)\n");
+    prompt.append("   - Analyzer Model: \n");
+    prompt.append("   - Main Findings: \n\n");
+    prompt.append("5. Study Date:\n");
+    prompt.append("   - Sample Type: Saliva (Example)\n");
+    prompt.append("   - Collection Method : Passive drool (Example)\n");
+    prompt.append("   - Main Findings: Normal volume and viscosity of saliva sample. No specific … (Example)\n\n");
+    prompt.append("SUMMARY:\n");
+    prompt.append("Juan Perez, a 45-year-old male, has a history of hypertension and was recently diagnosed with …(Example)\n\n");
+    prompt.append("RECOMMENDATIONS:\n");
+    prompt.append("Juan should continue with the prescribed oral iron supplement and … (Example)\n");
 
     return prompt.toString();
 }

@@ -130,18 +130,39 @@ public class BloodSample extends Sample {
     }
 
     @Override
-    public String getSpecificSampleInfo() {
+    public String getSpecificSampleTypeInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Blood Sample Analysis:\n");
-        if (glucoseMgDl != null) {
-            info.append("- Glucose: ").append(glucoseMgDl).append(" mg/dL\n");
-        }
-        if (hemoglobinGDl != null) {
-            info.append("- Hemoglobin: ").append(hemoglobinGDl).append(" g/dL\n");
-        }
-        if (cholesterolTotalMgDl != null) {
-            info.append("- Total Cholesterol: ").append(cholesterolTotalMgDl).append(" mg/dL\n");
-        }
+        info.append("- Glucose: ").append(glucoseMgDl).append(" mg/dL\n");
+        info.append("- Total Cholesterol: ").append(cholesterolTotalMgDl).append(" mg/dL\n");
+        info.append("- HDL Cholesterol: ").append(cholesterolHdlMgDl).append(" mg/dL\n");
+        info.append("- LDL Cholesterol: ").append(cholesterolLdlMgDl).append(" mg/dL\n");
+        info.append("- Triglycerides: ").append(triglyceridesMgDl).append(" mg/dL\n");
+        info.append("- Creatinine: ").append(creatinineMgDl).append(" mg/dL\n");
+        info.append("- Urea: ").append(ureaMgDl).append(" mg/dL\n");
+        info.append("- Hemoglobin: ").append(hemoglobinGDl).append(" g/dL\n");
+        info.append("- Hematocrit: ").append(hematocritPercent).append(" %\n");
+        info.append("- Red Blood Cells: ").append(redBloodCellsMillionUl).append(" million/uL\n");
+        info.append("- White Blood Cells: ").append(whiteBloodCellsThousandUl).append(" thousand/uL\n");
+        info.append("- Platelets: ").append(plateletsThousandUl).append(" thousand/uL\n");
+        info.append("- ALT (SGPT): ").append(altSgptUL).append(" U/L\n");
+        info.append("- AST (SGOT): ").append(astSgotUL).append(" U/L\n");
+        info.append("- Bilirubin Total: ").append(bilirubinTotalMgDl).append(" mg/dL\n");
+        info.append("- Alkaline Phosphatase: ").append(alkalinePhosphataseUL).append(" U/L\n");
+        info.append("- BUN: ").append(bunMgDl).append(" mg/dL\n");
+        info.append("- GFR: ").append(gfrMlMin).append(" mL/min\n");
+        info.append("- Total Protein: ").append(totalProteinGDl).append(" g/dL\n");
+        info.append("- Albumin: ").append(albuminGDl).append(" g/dL\n");
+        info.append("- Sodium: ").append(sodiumMeqL).append(" mEq/L\n");
+        info.append("- Potassium: ").append(potassiumMeqL).append(" mEq/L\n");
+        info.append("- Chloride: ").append(chlorideMeqL).append(" mEq/L\n");
+        info.append("- C-Reactive Protein: ").append(cReactiveProteinMgL).append(" mg/L\n");
+        info.append("- ESR: ").append(esrMmHr).append(" mm/hr\n");
+        info.append("- Genetic Markers Detected: ").append(geneticMarkersDetected).append("\n");
+        info.append("- Genetic Quality Score: ").append(geneticQualityScore).append("\n");
+        info.append("- Lab Reference Values: ").append(labReferenceValues).append("\n");
+        info.append("- Centrifugation Speed: ").append(centrifugationSpeedRpm).append(" rpm\n");
+        info.append("- Storage Temperature: ").append(storageTemperatureCelsius).append(" °C\n");
         return info.toString();
     }
 
@@ -157,5 +178,15 @@ public class BloodSample extends Sample {
 
     public boolean isAnemiaIndicated() {
         return hemoglobinGDl != null && hemoglobinGDl.compareTo(new BigDecimal("12.0")) < 0;
+    }
+
+    @Override
+    public String getSpecificSampleInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Sample Type: ").append(type != null ? type.name() : "N/A").append("\n");
+        info.append("Analyzer Model: ").append(analyzerModel).append("\n");
+        info.append("Collection Date: ").append(collectionDate != null ? collectionDate.toString() : "N/A").append("\n");
+        info.append("Notes: ").append(notes != null ? notes : "N/A").append("\n");
+        return info.toString();
     }
 }
