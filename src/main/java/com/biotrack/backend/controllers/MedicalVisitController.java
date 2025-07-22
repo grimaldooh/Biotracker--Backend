@@ -1,6 +1,7 @@
 package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.MedicalVisitCreationDTO;
+import com.biotrack.backend.dto.MedicalVisitDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.services.MedicalVisitService;
 import com.biotrack.backend.utils.MedicalVisitMapper;
@@ -110,36 +111,40 @@ public class MedicalVisitController {
         @ApiResponse(
             responseCode = "200",
             description = "List of medical visits for the patient",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = MedicalVisit.class)))
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = MedicalVisitDTO.class)))
         ),
         @ApiResponse(
             responseCode = "404",
             description = "Patient not found with the provided ID"
         )
     })
-    public ResponseEntity<List<MedicalVisit>> getByPatient(
+    public ResponseEntity<List<MedicalVisitDTO>> getByPatient(
         @Parameter(description = "Unique identifier of the patient")
         @PathVariable UUID patientId
     ) {
-        return ResponseEntity.ok(service.findByPatientId(patientId));
+        List<MedicalVisit> visits = service.findByPatientId(patientId);
+        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
     @GetMapping("/patient/{patientId}/pending")
     @Operation(summary = "Get pending visits for a patient")
-    public ResponseEntity<List<MedicalVisit>> getPendingVisitsByPatient(@PathVariable UUID patientId) {
-        return ResponseEntity.ok(service.findPendingByPatientId(patientId));
+    public ResponseEntity<List<MedicalVisitDTO>> getPendingVisitsByPatient(@PathVariable UUID patientId) {
+        List<MedicalVisit> visits = service.findPendingByPatientId(patientId);
+        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
     @GetMapping("/doctor/{doctorId}")
     @Operation(summary = "Get all visits for a doctor")
-    public ResponseEntity<List<MedicalVisit>> getVisitsByDoctor(@PathVariable UUID doctorId) {
-        return ResponseEntity.ok(service.findByDoctorId(doctorId));
+    public ResponseEntity<List<MedicalVisitDTO>> getVisitsByDoctor(@PathVariable UUID doctorId) {
+        List<MedicalVisit> visits = service.findByDoctorId(doctorId);
+        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
     @GetMapping("/doctor/{doctorId}/pending")
     @Operation(summary = "Get pending visits for a doctor")
-    public ResponseEntity<List<MedicalVisit>> getPendingVisitsByDoctor(@PathVariable UUID doctorId) {
-        return ResponseEntity.ok(service.findPendingByDoctorId(doctorId));
+    public ResponseEntity<List<MedicalVisitDTO>> getPendingVisitsByDoctor(@PathVariable UUID doctorId) {
+        List<MedicalVisit> visits = service.findPendingByDoctorId(doctorId);
+        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
     @GetMapping

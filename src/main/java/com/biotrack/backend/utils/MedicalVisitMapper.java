@@ -1,12 +1,15 @@
 package com.biotrack.backend.utils;
 
 import com.biotrack.backend.dto.MedicalVisitCreationDTO;
+import com.biotrack.backend.dto.MedicalVisitDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.models.enums.MedicalVisitType;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MedicalVisitMapper {
 
@@ -40,5 +43,26 @@ public class MedicalVisitMapper {
                 visit.getMedicalEntityId(),
                 visit.getType()
         );
+    }
+
+    public static MedicalVisitDTO toBasicDTO(MedicalVisit visit) {
+        return new MedicalVisitDTO(
+            visit.getId(),
+            visit.getPatient() != null ? visit.getPatient().getFirstName() + " " + visit.getPatient().getLastName() : null,
+            visit.getDoctor() != null ? visit.getDoctor().getName() : null,
+            visit.getVisitDate(),
+            visit.getNotes(),
+            visit.getDiagnosis(),
+            visit.getRecommendations(),
+            visit.getMedicalEntityId(),
+            visit.isVisitCompleted(),
+            visit.getType()
+        );
+    }
+
+    public static List<MedicalVisitDTO> toDTOList(List<MedicalVisit> visits) {
+        return visits.stream()
+                .map(MedicalVisitMapper::toBasicDTO)
+                .collect(Collectors.toList());
     }
 }
