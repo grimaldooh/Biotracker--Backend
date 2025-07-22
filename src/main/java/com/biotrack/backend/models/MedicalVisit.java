@@ -30,6 +30,9 @@ public class MedicalVisit {
     @Column(name = "visit_date", nullable = false)
     private LocalDateTime visitDate;
 
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 
@@ -38,6 +41,12 @@ public class MedicalVisit {
 
     @Column(columnDefinition = "TEXT")
     private String recommendations;
+
+    @Column(name = "medical_entity_id", nullable = false)
+    private UUID medicalEntityId;
+
+    @Column(name = "visit_completed", nullable = false)
+    private boolean visitCompleted = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)

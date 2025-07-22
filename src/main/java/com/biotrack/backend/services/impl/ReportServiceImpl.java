@@ -81,7 +81,7 @@ public class ReportServiceImpl implements ReportService {
 
         try {
             // 5. Construir información del paciente si no se proporciona
-            String patientContext = buildPatientContext(sample, patientInfo);
+            String patientContext = buildPatientContext(sample);
 
             // 6. Generar reporte con OpenAI
             String reportContent = openAIService.generateGeneticReport(mutations, patientContext);
@@ -114,7 +114,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional
-    public Report generateClinicalReport(UUID sampleId, String patientInfo) {
+    public Report generateClinicalReport(UUID sampleId) {
         Sample sample = sampleService.findById(sampleId);
 
         if (!openAIService.isConfigured()) {
@@ -135,7 +135,7 @@ public class ReportServiceImpl implements ReportService {
 
         try {
             // Construir contexto clínico completo
-            String patientContext = buildPatientContext(sample, patientInfo);
+            String patientContext = buildPatientContext(sample);
 
             // Puedes agregar aquí los datos específicos de la muestra (blood, dna, saliva)
             String sampleInfo = sample.getSpecificSampleInfo();
@@ -224,7 +224,7 @@ public class ReportServiceImpl implements ReportService {
     /**
      * Construye el contexto del paciente para el prompt
      */
-    private String buildPatientContext(Sample sample, String additionalInfo) {
+    private String buildPatientContext(Sample sample) {
         StringBuilder context = new StringBuilder();
         
         if (sample.getPatient() != null) {
@@ -248,10 +248,10 @@ public class ReportServiceImpl implements ReportService {
             context.append("- Clinical Notes: ").append(sample.getNotes()).append("\n");
         }
         
-        if (additionalInfo != null && !additionalInfo.trim().isEmpty()) {
-            context.append("\nAdditional Clinical Information:\n");
-            context.append(additionalInfo);
-        }
+        // if (additionalInfo != null && !additionalInfo.trim().isEmpty()) {
+        //     context.append("\nAdditional Clinical Information:\n");
+        //     context.append(additionalInfo);
+        // }
         
         return context.toString();
     }

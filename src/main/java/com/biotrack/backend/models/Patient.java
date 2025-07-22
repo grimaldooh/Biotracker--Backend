@@ -26,6 +26,12 @@ public class Patient{
     private String firstName;
     private String lastName;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+    
+    @Column(nullable = false, unique = true)
+    private String phoneNumber;
+
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
@@ -36,6 +42,12 @@ public class Patient{
 
     private LocalDate createdAt;
 
+    
+
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ClinicalHistoryRecord> clinicalHistoryRecords = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "activePatients")
+    @Builder.Default
+    private List<Hospital> hospitals = new ArrayList<>();
 }

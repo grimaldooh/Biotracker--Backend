@@ -96,11 +96,11 @@ public class ReportController {
         )
     })
     public ResponseEntity<ReportDTO> generateClinicalReport(
-            @RequestParam UUID sampleId,
-            @RequestParam(required = false) String patientInfo
+            @RequestParam UUID sampleId
+            //@RequestParam(required = false) String patientInfo
     ) {
         try {
-            Report report = reportService.generateClinicalReport(sampleId, patientInfo);
+            Report report = reportService.generateClinicalReport(sampleId);
             return ResponseEntity.status(HttpStatus.CREATED).body(ReportMapper.toDTO(report));
         } catch (Exception e) {
             throw new RuntimeException("Error generating clinical report: " + e.getMessage(), e);

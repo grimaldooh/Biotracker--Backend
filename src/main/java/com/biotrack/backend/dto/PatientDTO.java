@@ -14,5 +14,7 @@ public record PatientDTO(
         @NotBlank String lastName,
         @NotNull LocalDate birthDate,
         @NotNull Gender gender,
+        @NotBlank String email,
+        @NotBlank String phoneNumber,
         String curp
 ) {}

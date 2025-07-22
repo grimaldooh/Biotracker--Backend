@@ -12,6 +12,8 @@ public class PatientMapper {
                 patient.getLastName(),
                 patient.getBirthDate(),
                 patient.getGender(),
+                patient.getEmail(),
+                patient.getPhoneNumber(),
                 patient.getCurp()
         );
     }
@@ -23,6 +25,8 @@ public class PatientMapper {
                 .lastName(dto.lastName())
                 .birthDate(dto.birthDate())
                 .gender(dto.gender())
+                .email(dto.email())
+                .phoneNumber(dto.phoneNumber())
                 .curp(dto.curp())
                 .build();
     }

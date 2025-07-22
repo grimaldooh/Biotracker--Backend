@@ -1,17 +1,20 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.MedicalVisitCreationDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.services.MedicalVisitService;
+import com.biotrack.backend.utils.MedicalVisitMapper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.*;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.parameters.*;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +30,7 @@ public class MedicalVisitController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping("/{medical_entity_id}")
     @Operation(
         summary = "Create medical visit",
         description = "Register a new medical visit for a patient"
@@ -43,11 +46,36 @@ public class MedicalVisitController {
             description = "Invalid input data or validation errors"
         )
     })
-    public ResponseEntity<MedicalVisit> create(
-        @RequestBody MedicalVisit visit
-    ) {
-        MedicalVisit saved = service.create(visit);
-        return ResponseEntity.status(201).body(saved);
+    public ResponseEntity<MedicalVisitCreationDTO> create(@RequestBody MedicalVisitCreationDTO visit, @PathVariable UUID medical_entity_id ) {
+        MedicalVisit saved = service.create(MedicalVisitMapper.toEntity(visit), medical_entity_id);
+        MedicalVisitCreationDTO dto = MedicalVisitMapper.toDTO(saved);
+
+        return ResponseEntity.status(201).body(dto);
+    }
+
+    @PostMapping("/submitAdvance/{id}")
+    @Operation(
+        summary = "Create medical visit",
+        description = "Register a new medical visit for a patient"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Medical visit created successfully",
+            content = @Content(schema = @Schema(implementation = MedicalVisit.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid input data or validation errors"
+        )
+    })
+    public ResponseEntity<MedicalVisitCreationDTO> submitAdvance(@RequestBody MedicalVisitCreationDTO visit,@PathVariable UUID id) {
+        MedicalVisit appointmentUpdate = service.submitAdvance(id , MedicalVisitMapper.toEntity(visit));
+        MedicalVisitCreationDTO dto = MedicalVisitMapper.toDTO(appointmentUpdate);
+        dto.setDoctorId(null);
+        dto.setPatientId(null);
+        dto.setVisitDate(appointmentUpdate.getVisitDate().toString());
+        return ResponseEntity.status(201).body(dto);
     }
 
     @GetMapping("/{id}")
@@ -94,6 +122,24 @@ public class MedicalVisitController {
         @PathVariable UUID patientId
     ) {
         return ResponseEntity.ok(service.findByPatientId(patientId));
+    }
+
+    @GetMapping("/patient/{patientId}/pending")
+    @Operation(summary = "Get pending visits for a patient")
+    public ResponseEntity<List<MedicalVisit>> getPendingVisitsByPatient(@PathVariable UUID patientId) {
+        return ResponseEntity.ok(service.findPendingByPatientId(patientId));
+    }
+
+    @GetMapping("/doctor/{doctorId}")
+    @Operation(summary = "Get all visits for a doctor")
+    public ResponseEntity<List<MedicalVisit>> getVisitsByDoctor(@PathVariable UUID doctorId) {
+        return ResponseEntity.ok(service.findByDoctorId(doctorId));
+    }
+
+    @GetMapping("/doctor/{doctorId}/pending")
+    @Operation(summary = "Get pending visits for a doctor")
+    public ResponseEntity<List<MedicalVisit>> getPendingVisitsByDoctor(@PathVariable UUID doctorId) {
+        return ResponseEntity.ok(service.findPendingByDoctorId(doctorId));
     }
 
     @GetMapping

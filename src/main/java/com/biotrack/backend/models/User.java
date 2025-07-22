@@ -4,6 +4,8 @@ import com.biotrack.backend.models.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity 
@@ -23,10 +25,21 @@ public class User {
     private String name;
 
     @Column(nullable = false, unique = true)
+    private String phoneNumber;
+
+    @Column(nullable = false, unique = true)
     private String email;
 
     private String password;
 
+    @ManyToMany(mappedBy = "authorizedUsers")
+    @Builder.Default
+    private List<Hospital> hospitals = new ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    //Methods 
+
+    
 }
