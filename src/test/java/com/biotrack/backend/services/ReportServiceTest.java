@@ -45,7 +45,7 @@ class ReportServiceTest {
     // Datos de prueba basados en tu BD
     private Patient testPatient;
     private User testUser;
-    private Sample testSample;
+    private DnaSample testSample;
     private List<Mutation> testMutations;
 
     @BeforeEach
@@ -82,7 +82,7 @@ class ReportServiceTest {
                 .build();
 
         // Muestra de prueba (datos reales de tu BD)
-        testSample = Sample.builder()
+        testSample = DnaSample.builder()
                 .id(UUID.fromString("38fa3d6b-d486-4337-bd2f-059cb1f10d6b"))
                 .patient(testPatient)
                 .registeredBy(testUser)

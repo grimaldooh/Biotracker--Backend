@@ -1,10 +1,12 @@
 package com.biotrack.backend.services;
 
+import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.models.enums.SampleStatus;
 import com.biotrack.backend.models.enums.SampleType;
+import com.biotrack.backend.repositories.ReportRepository;
 import com.biotrack.backend.repositories.SampleRepository;
 import com.biotrack.backend.services.impl.SampleServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,17 +19,20 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class SampleServiceTest {
 
     private SampleRepository sampleRepository;
+    private ReportRepository reportRepository;
     private SampleService sampleService;
 
     @BeforeEach
     void setUp() {
         sampleRepository = mock(SampleRepository.class);
-        sampleService = new SampleServiceImpl(sampleRepository);
+        reportRepository = mock(ReportRepository.class);
+        sampleService = new SampleServiceImpl(sampleRepository, reportRepository);
     }
 
     @Test
@@ -76,7 +81,7 @@ public class SampleServiceTest {
     }
 
     private Sample createSample() {
-        return Sample.builder()
+        return DnaSample.builder()
                 .id(UUID.randomUUID())
                 .patient(mock(Patient.class))
                 .registeredBy(mock(User.class))

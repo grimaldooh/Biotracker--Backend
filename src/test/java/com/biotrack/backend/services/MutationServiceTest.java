@@ -45,11 +45,11 @@ class MutationServiceTest {
     void processResultFile_ShouldParseMutations_WhenValidCSV() {
         // Arrange
         UUID resultFileId = UUID.fromString("73a2e687-7401-4362-978b-e2ca46c8b1ea");
-        
-        Sample sample = Sample.builder()
+
+        DnaSample sample = DnaSample.builder() // Usa la subclase concreta
                 .id(UUID.fromString("38fa3d6b-d486-4337-bd2f-059cb1f10d6b"))
                 .build();
-        
+
         ResultFile resultFile = ResultFile.builder()
                 .id(resultFileId)
                 .s3Url("https://biotrack-results-files.s3.amazonaws.com/results/1752563586_1bb9148c-db73-4598-9a04-a0bc2c18dc9b_file.csv")
@@ -64,17 +64,17 @@ class MutationServiceTest {
                 """;
 
         InputStream csvStream = new ByteArrayInputStream(csvContent.getBytes());
-        
+
         when(resultFileService.findById(resultFileId)).thenReturn(resultFile);
         when(s3Service.downloadFile("results/1752563586_1bb9148c-db73-4598-9a04-a0bc2c18dc9b_file.csv"))
                 .thenReturn(csvStream);
-        
+
         List<Mutation> expectedMutations = Arrays.asList(
                 Mutation.builder().gene("BRCA1").chromosome("17").type("SNV").relevance(Relevance.HIGH).build(),
                 Mutation.builder().gene("TP53").chromosome("17").type("DELETION").relevance(Relevance.MEDIUM).build(),
                 Mutation.builder().gene("CFTR").chromosome("7").type("INSERTION").relevance(Relevance.LOW).build()
         );
-        
+
         when(mutationRepository.saveAll(any())).thenReturn(expectedMutations);
 
         // Act
@@ -84,7 +84,7 @@ class MutationServiceTest {
         assertNotNull(result);
         assertEquals(3, result.size());
         verify(s3Service).downloadFile("results/1752563586_1bb9148c-db73-4598-9a04-a0bc2c18dc9b_file.csv");
-        verify(mutationRepository).saveAll(argThat(mutations -> 
+        verify(mutationRepository).saveAll(argThat(mutations ->
                 StreamSupport.stream(mutations.spliterator(), false).count() == 3 &&
                 StreamSupport.stream(mutations.spliterator(), false).anyMatch(m -> "BRCA1".equals(m.getGene()))
         ));
@@ -97,7 +97,7 @@ class MutationServiceTest {
         ResultFile resultFile = ResultFile.builder()
                 .id(resultFileId)
                 .s3Url("https://biotrack-results-files.s3.amazonaws.com/invalid/file.csv")
-                .sample(Sample.builder().id(UUID.randomUUID()).build())
+                .sample(DnaSample.builder().id(UUID.randomUUID()).build())
                 .build();
 
         when(resultFileService.findById(resultFileId)).thenReturn(resultFile);

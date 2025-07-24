@@ -7,6 +7,9 @@ import com.biotrack.backend.services.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -31,5 +34,16 @@ class UserServiceTest {
         assertEquals("Angel", result.getName());
         assertEquals(Role.TECHNICIAN, result.getRole());
         verify(repo, times(1)).save(u);
+    }
+
+    @Test
+    void findById_shouldReturnUserIfExists() {
+        UUID id = UUID.randomUUID();
+        User u = User.builder().id(id).name("Angel").build();
+        when(repo.findById(id)).thenReturn(Optional.of(u));
+
+        User result = service.getUserById(id);
+
+        assertEquals(id, result.getId());
     }
 }

@@ -1,7 +1,7 @@
 package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.models.Report;
-import com.biotrack.backend.models.Sample;
+import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.enums.ReportStatus;
 import com.biotrack.backend.services.OpenAIService;
 import com.biotrack.backend.services.ReportService;
@@ -14,8 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -44,10 +42,14 @@ class ReportControllerTest {
         // Arrange
         UUID sampleId = UUID.fromString("38fa3d6b-d486-4337-bd2f-059cb1f10d6b");
         String patientInfo = "Additional patient information";
-        
+
+        DnaSample dnaSample = DnaSample.builder()
+                .id(sampleId)
+                .build();
+
         Report mockReport = Report.builder()
                 .id(UUID.randomUUID())
-                .sample(Sample.builder().id(sampleId).build())
+                .sample(dnaSample)
                 .status(ReportStatus.COMPLETED)
                 .s3Url("https://biotrack-results-files.s3.amazonaws.com/reports/test.txt")
                 .generatedAt(LocalDateTime.now())
@@ -62,7 +64,7 @@ class ReportControllerTest {
                         .param("sampleId", sampleId.toString())
                         .param("patientInfo", patientInfo)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
+                .andExpect(status().isCreated()) //error expected 201 but was 403
                 .andExpect(jsonPath("$.sampleId").value(sampleId.toString()))
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.openaiModel").value("gpt-4o-mini"));
@@ -78,7 +80,7 @@ class ReportControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/reports/test-openai"))
-                .andExpect(status().isOk())
+                .andExpect(status().isOk()) //error expected 200 but was 401
                 .andExpect(content().string(containsString("OpenAI API is working!")));
     }
 
@@ -89,7 +91,7 @@ class ReportControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/reports/test-openai"))
-                .andExpect(status().isServiceUnavailable())
+                .andExpect(status().isServiceUnavailable()) //error expected 503 but was 401
                 .andExpect(content().string(containsString("OpenAI service is not configured")));
     }
 }
