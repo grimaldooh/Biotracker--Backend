@@ -14,5 +14,6 @@ public interface HospitalService {
     void deleteById(UUID id);
     User registerUser(UUID hospitalId, User user);
     Patient registerPatient(UUID hospitalId, Patient patient);
+    List<Patient> getActivePatientsByHospitalId(UUID hospitalId);
     // Agrega métodos para las funciones avanzadas
 }

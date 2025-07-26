@@ -10,6 +10,7 @@ import com.biotrack.backend.services.HospitalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,6 +77,7 @@ public class HospitalServiceImpl implements HospitalService {
     @Override
     public Patient registerPatient(UUID hospitalId, Patient patient) {
         Hospital hospital = findById(hospitalId);
+        patient.setCreatedAt(LocalDateTime.now().toLocalDate());
 
         if (isEmailRegistered(patient.getEmail())) {
 
@@ -93,6 +95,12 @@ public class HospitalServiceImpl implements HospitalService {
             return newPatient;
         }
 
+    }
+
+    @Override
+    public List<Patient> getActivePatientsByHospitalId(UUID hospitalId) {
+        Hospital hospital = findById(hospitalId);
+        return hospital.getActivePatients();
     }
 
     private boolean isEmailRegistered(String email) {

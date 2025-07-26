@@ -8,12 +8,14 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 
-public record PatientDTO(
+public record PatientCreationDTO(
         UUID id,
         @NotBlank String firstName,
         @NotBlank String lastName,
         @NotNull LocalDate birthDate,
         @NotNull Gender gender,
         @NotBlank String email,
-        @NotBlank String phoneNumber
+        @NotNull String password,
+        @NotBlank String phoneNumber,
+        String curp
 ) {}

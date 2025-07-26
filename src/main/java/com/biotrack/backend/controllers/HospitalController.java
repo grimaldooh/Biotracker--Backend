@@ -1,5 +1,6 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.PatientCreationDTO;
 import com.biotrack.backend.dto.PatientDTO;
 import com.biotrack.backend.dto.UserDTO;
 import com.biotrack.backend.models.Hospital;
@@ -10,6 +11,7 @@ import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.PatientMapper;
 import com.biotrack.backend.utils.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -104,13 +106,35 @@ public class HospitalController {
                     description = "Invalid input data or validation errors"
             )
     })
-    public ResponseEntity<PatientDTO> registerPatient(@Valid @RequestBody PatientDTO patientDTO, @PathVariable UUID hospitalId) {
+    public ResponseEntity<PatientDTO> registerPatient(@Valid @RequestBody PatientCreationDTO patientDTO, @PathVariable UUID hospitalId) {
         try {
-            Patient saved = service.registerPatient(hospitalId, PatientMapper.toEntity(patientDTO));
+            Patient saved = service.registerPatient(hospitalId, PatientMapper.toEntityCreation(patientDTO));
             return ResponseEntity.status(HttpStatus.CREATED).body(PatientMapper.toDTO(saved));
         } catch (Exception e) {
             throw new RuntimeException("Error registering patient: " + e.getMessage(), e);
         }
+    }
+
+    @GetMapping("/{hospitalId}/patients")
+    @Operation(
+        summary = "List patients linked to a hospital",
+        description = "Retrieve all patients currently linked to the specified hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of patients linked to the hospital",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = PatientDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<PatientDTO>> getPatientsByHospital(@PathVariable UUID hospitalId) {
+        List<Patient> patients = service.getActivePatientsByHospitalId(hospitalId);
+        List<PatientDTO> dtos = patients.stream().map(PatientMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
 }

@@ -1,7 +1,7 @@
 package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.ClinicalHistoryRecordDTO;
-import com.biotrack.backend.dto.PatientDTO;
+import com.biotrack.backend.dto.PatientCreationDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.models.ClinicalHistoryRecord;
 import com.biotrack.backend.models.Patient;
@@ -46,17 +46,17 @@ public class PatientController {
         @ApiResponse(
             responseCode = "201",
             description = "Patient created successfully",
-            content = @Content(schema = @Schema(implementation = PatientDTO.class))
+            content = @Content(schema = @Schema(implementation = PatientCreationDTO.class))
         ),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid input data or validation errors"
         )
     })
-    public ResponseEntity<PatientDTO> create(@Valid @RequestBody PatientDTO dto){
+    public ResponseEntity<PatientCreationDTO> create(@Valid @RequestBody PatientCreationDTO dto){
         try {
-            Patient saved = patientService.create(PatientMapper.toEntity(dto));
-            return ResponseEntity.status(HttpStatus.CREATED).body(PatientMapper.toDTO(saved));
+            Patient saved = patientService.create(PatientMapper.toEntityCreation(dto));
+            return ResponseEntity.status(HttpStatus.CREATED).body(PatientMapper.toDTOCreation(saved));
         } catch (Exception e) {
             // En caso de error, lanzar excepción para que sea manejada por @ExceptionHandler
             throw new RuntimeException("Error creating patient: " + e.getMessage(), e);
@@ -72,9 +72,9 @@ public class PatientController {
         responseCode = "200",
         description = "Patient list retrieved successfully"
     )
-    public ResponseEntity<List<PatientDTO>> getAll(){
-        List<PatientDTO> patients = patientService.findAll().stream()
-                .map(PatientMapper::toDTO).toList();
+    public ResponseEntity<List<PatientCreationDTO>> getAll(){
+        List<PatientCreationDTO> patients = patientService.findAll().stream()
+                .map(PatientMapper::toDTOCreation).toList();
         return ResponseEntity.ok(patients);
     }
 
@@ -87,19 +87,19 @@ public class PatientController {
         @ApiResponse(
             responseCode = "200",
             description = "Patient found successfully",
-            content = @Content(schema = @Schema(implementation = PatientDTO.class))
+            content = @Content(schema = @Schema(implementation = PatientCreationDTO.class))
         ),
         @ApiResponse(
             responseCode = "404",
             description = "Patient not found with the provided ID"
         )
     })
-    public ResponseEntity<PatientDTO> getById(
+    public ResponseEntity<PatientCreationDTO> getById(
         @Parameter(description = "Unique identifier of the patient") 
         @PathVariable UUID id
     ){
         Patient patient = patientService.findById(id);
-        return ResponseEntity.ok(PatientMapper.toDTO(patient));
+        return ResponseEntity.ok(PatientMapper.toDTOCreation(patient));
     }
 
     @PutMapping("/{id}")
@@ -111,7 +111,7 @@ public class PatientController {
         @ApiResponse(
             responseCode = "200",
             description = "Patient updated successfully",
-            content = @Content(schema = @Schema(implementation = PatientDTO.class))
+            content = @Content(schema = @Schema(implementation = PatientCreationDTO.class))
         ),
         @ApiResponse(
             responseCode = "404",
@@ -122,13 +122,13 @@ public class PatientController {
             description = "Invalid input data or validation errors"
         )
     })
-    public ResponseEntity<PatientDTO> update(
+    public ResponseEntity<PatientCreationDTO> update(
         @Parameter(description = "Unique identifier of the patient") 
         @PathVariable UUID id, 
-        @Valid @RequestBody PatientDTO updatedPatient
+        @Valid @RequestBody PatientCreationDTO updatedPatient
     ){
-        Patient patient = patientService.update(id, PatientMapper.toEntity(updatedPatient));
-        return ResponseEntity.ok(PatientMapper.toDTO(patient));
+        Patient patient = patientService.update(id, PatientMapper.toEntityCreation(updatedPatient));
+        return ResponseEntity.ok(PatientMapper.toDTOCreation(patient));
     }
 
     @DeleteMapping("/{id}")

@@ -49,6 +49,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public Patient create(Patient patient){
+        patient.setCreatedAt(LocalDateTime.now().toLocalDate());
         return patientRepository.save(patient);
     }
 
@@ -80,7 +81,16 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public void deleteById(UUID id){
-        patientRepository.deleteById(id);
+        Patient patient = patientRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        // Elimina la relación con hospitales
+        patient.getHospitals().forEach(hospital -> hospital.getActivePatients().remove(patient));
+        patient.getHospitals().clear();
+
+        patientRepository.save(patient); // Actualiza relaciones
+
+        patientRepository.deleteById(id); // Ahora sí elimina el paciente
     }
 
     @Override
