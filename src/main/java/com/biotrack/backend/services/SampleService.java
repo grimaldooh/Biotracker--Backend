@@ -11,4 +11,5 @@ public interface SampleService {
     Sample findById(UUID id);
     void deleteById(UUID id);
     Sample update(UUID id, Sample sample);
+    List<Sample> findByPatientId(UUID patientId);
 }

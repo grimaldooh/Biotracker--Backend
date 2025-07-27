@@ -15,4 +15,5 @@ public interface MedicalVisitService {
     List<MedicalVisit> findPendingByDoctorId(UUID doctorId);
     List<MedicalVisit> findAll();
     void deleteById(UUID id);
+    List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId);
 }

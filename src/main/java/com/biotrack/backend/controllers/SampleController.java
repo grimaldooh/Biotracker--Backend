@@ -13,6 +13,7 @@ import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.SampleMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -177,6 +178,28 @@ public class SampleController {
     ){
         sampleService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/patient/{patientId}")
+    @Operation(
+        summary = "List samples by patient",
+        description = "Retrieve all samples linked to a specific patient"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of samples for the patient",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = SampleDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Patient not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<SampleDTO>> getSamplesByPatient(@PathVariable UUID patientId) {
+        List<Sample> samples = sampleService.findByPatientId(patientId);
+        List<SampleDTO> dtos = samples.stream().map(SampleMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     // Exception handlers locales para este controlador

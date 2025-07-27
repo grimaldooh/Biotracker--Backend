@@ -2,9 +2,11 @@ package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.Hospital;
 import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.repositories.HospitalRepository;
 import com.biotrack.backend.repositories.PatientRepository;
+import com.biotrack.backend.repositories.SampleRepository;
 import com.biotrack.backend.repositories.UserRepository;
 import com.biotrack.backend.services.HospitalService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +25,16 @@ public class HospitalServiceImpl implements HospitalService {
 
     private PatientRepository patientRepository;
 
+    private SampleRepository sampleRepository;
+
     public HospitalServiceImpl(HospitalRepository repository,
                                UserRepository userRepository,
-                               PatientRepository patientRepository) {
+                               PatientRepository patientRepository,
+                               SampleRepository sampleRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.patientRepository = patientRepository;
+        this.sampleRepository = sampleRepository;
     }
 
     @Override
@@ -101,6 +107,15 @@ public class HospitalServiceImpl implements HospitalService {
     public List<Patient> getActivePatientsByHospitalId(UUID hospitalId) {
         Hospital hospital = findById(hospitalId);
         return hospital.getActivePatients();
+    }
+
+    @Override
+    public List<Sample> getSamplesByHospitalId(UUID hospitalId) {
+        Hospital hospital = findById(hospitalId);
+        List<UUID> patientIds = hospital.getActivePatients().stream()
+            .map(Patient::getId)
+            .toList();
+        return sampleRepository.findByPatientIdIn(patientIds);
     }
 
     private boolean isEmailRegistered(String email) {

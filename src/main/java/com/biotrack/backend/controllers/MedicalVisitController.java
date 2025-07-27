@@ -147,6 +147,27 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @GetMapping("/hospital/{medicalEntityId}")
+    @Operation(
+        summary = "Get all medical visits for a hospital",
+        description = "Retrieve all medical visits (completed and not completed) for a specific hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of medical visits for the hospital",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = MedicalVisitDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<MedicalVisitDTO>> getVisitsByHospital(@PathVariable UUID medicalEntityId) {
+        List<MedicalVisit> visits = service.findByMedicalEntityId(medicalEntityId);
+        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
+    }
+
     @GetMapping
     @Operation(
         summary = "Get all medical visits",

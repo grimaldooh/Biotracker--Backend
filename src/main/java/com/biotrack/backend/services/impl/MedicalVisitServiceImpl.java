@@ -91,4 +91,9 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     public void deleteById(UUID id) {
         repository.deleteById(id);
     }
+
+    @Override
+    public List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId) {
+        return repository.findByMedicalEntityId(medicalEntityId);
+    }
 }

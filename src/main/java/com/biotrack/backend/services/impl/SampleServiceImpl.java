@@ -160,4 +160,9 @@ public class SampleServiceImpl implements SampleService {
         }
         throw new IllegalArgumentException("Tipo de muestra no soportado");
     }
+
+    @Override
+    public List<Sample> findByPatientId(UUID patientId) {
+        return sampleRepository.findByPatientId(patientId);
+    }
 }

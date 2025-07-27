@@ -2,6 +2,8 @@ package com.biotrack.backend.models;
 
 import com.biotrack.backend.models.enums.SampleStatus;
 import com.biotrack.backend.models.enums.SampleType;
+import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

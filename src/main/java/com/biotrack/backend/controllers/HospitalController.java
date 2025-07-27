@@ -2,13 +2,17 @@ package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.PatientCreationDTO;
 import com.biotrack.backend.dto.PatientDTO;
+import com.biotrack.backend.dto.SampleDTO;
+import com.biotrack.backend.dto.Samples.SampleDetailDTO;
 import com.biotrack.backend.dto.UserDTO;
 import com.biotrack.backend.models.Hospital;
 import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.services.HospitalService;
 import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.PatientMapper;
+import com.biotrack.backend.utils.SampleMapper;
 import com.biotrack.backend.utils.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -134,6 +138,28 @@ public class HospitalController {
     public ResponseEntity<List<PatientDTO>> getPatientsByHospital(@PathVariable UUID hospitalId) {
         List<Patient> patients = service.getActivePatientsByHospitalId(hospitalId);
         List<PatientDTO> dtos = patients.stream().map(PatientMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/{hospitalId}/samples")
+    @Operation(
+        summary = "List all samples linked to patients of a hospital",
+        description = "Retrieve all genetic samples (blood, dna, saliva) linked to patients of the specified hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of samples linked to hospital patients",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = SampleDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<SampleDetailDTO>> getSamplesByHospital(@PathVariable UUID hospitalId) {
+        List<Sample> samples = service.getSamplesByHospitalId(hospitalId);
+        List<SampleDetailDTO> dtos = samples.stream().map(SampleMapper::toDetailDTO).toList();
         return ResponseEntity.ok(dtos);
     }
 
