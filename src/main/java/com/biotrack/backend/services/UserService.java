@@ -11,4 +11,5 @@ public interface UserService {
     User getUserById(UUID id);
     void deleteUserById(UUID id);
     User updateUser(UUID id, User user);
+    List<User> getMedicsByHospitalId(UUID hospitalId);
 }

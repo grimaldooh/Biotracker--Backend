@@ -27,4 +27,5 @@ public class MedicalVisitCreationDTO{
     String recommendations;
     UUID medicalEntityId;
     MedicalVisitType type;
+    String medicalArea;
 }

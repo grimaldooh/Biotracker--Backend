@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import com.biotrack.backend.models.enums.Role;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -49,5 +50,10 @@ public class UserServiceImpl implements UserService {
         existing.setPassword(updatedUser.getPassword());
         existing.setRole(updatedUser.getRole());
         return userRepository.save(existing);
+    }
+
+    @Override
+    public List<User> getMedicsByHospitalId(UUID hospitalId) {
+        return userRepository.findByHospitals_IdAndRole(hospitalId, Role.MEDIC);
     }
 }

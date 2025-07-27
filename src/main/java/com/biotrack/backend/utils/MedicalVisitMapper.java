@@ -29,6 +29,7 @@ public class MedicalVisitMapper {
         visit.setRecommendations(dto.getRecommendations());
         visit.setMedicalEntityId(dto.getMedicalEntityId());
         visit.setType(MedicalVisitType.valueOf(dto.getType().name()));
+        visit.setMedicalArea(dto.getMedicalArea());
         return visit;
     }
 
@@ -41,7 +42,8 @@ public class MedicalVisitMapper {
                 visit.getDiagnosis(),
                 visit.getRecommendations(),
                 visit.getMedicalEntityId(),
-                visit.getType()
+                visit.getType(),
+                visit.getMedicalArea()
         );
     }
 
@@ -56,7 +58,8 @@ public class MedicalVisitMapper {
             visit.getRecommendations(),
             visit.getMedicalEntityId(),
             visit.isVisitCompleted(),
-            visit.getType()
+            visit.getType(),
+            visit.getMedicalArea()
         );
     }
 

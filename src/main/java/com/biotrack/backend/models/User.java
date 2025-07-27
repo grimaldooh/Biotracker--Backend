@@ -39,6 +39,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "specialty", nullable = true)
+    private String specialty;
+
     //Methods 
 
     

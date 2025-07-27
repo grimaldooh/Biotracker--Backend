@@ -7,6 +7,7 @@ import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -149,6 +150,28 @@ public class UserController {
     ) {
         userService.deleteUserById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/hospital/{hospitalId}/medics")
+    @Operation(
+        summary = "Get medics by hospital",
+        description = "Retrieve all users with role MEDIC linked to a specific hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of medics linked to the hospital",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<UserDTO>> getMedicsByHospital(@PathVariable UUID hospitalId) {
+        List<User> medics = userService.getMedicsByHospitalId(hospitalId);
+        List<UserDTO> dtos = medics.stream().map(UserMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     // Exception handlers locales para este controlador

@@ -51,4 +51,7 @@ public class MedicalVisit {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private MedicalVisitType type;
+
+    @Column(name = "medicalArea")
+    private String medicalArea;
 }

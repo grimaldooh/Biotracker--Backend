@@ -24,5 +24,9 @@ public record UserDTO(
         String password,
 
         @NotNull
-        Role role
+        Role role,
+
+        String specialty
+
+
 ) {}

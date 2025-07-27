@@ -15,5 +15,6 @@ public record MedicalVisitDTO(
     String recommendations,
     UUID medicalEntityId,
     boolean visitCompleted,
-    MedicalVisitType type
+    MedicalVisitType type,
+    String medicalArea
 ) {}

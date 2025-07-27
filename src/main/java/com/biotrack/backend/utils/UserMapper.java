@@ -12,7 +12,8 @@ public class UserMapper {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 user.getPassword(),
-                user.getRole()
+                user.getRole(),
+                user.getSpecialty()
         );
     }
 
@@ -24,6 +25,7 @@ public class UserMapper {
                 .phoneNumber(dto.phoneNumber())
                 .password(dto.password())
                 .role(dto.role())
+                .specialty(dto.specialty())
                 .build();
     }
 }

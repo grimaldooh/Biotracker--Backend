@@ -2,6 +2,7 @@ package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.SampleCreationDTO;
 import com.biotrack.backend.dto.SampleDTO;
+import com.biotrack.backend.dto.Samples.SampleDetailDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.factories.SampleFactory;
 import com.biotrack.backend.models.Patient;
@@ -196,9 +197,9 @@ public class SampleController {
             description = "Patient not found with the provided ID"
         )
     })
-    public ResponseEntity<List<SampleDTO>> getSamplesByPatient(@PathVariable UUID patientId) {
+    public ResponseEntity<List<SampleDetailDTO>> getSamplesByPatient(@PathVariable UUID patientId) {
         List<Sample> samples = sampleService.findByPatientId(patientId);
-        List<SampleDTO> dtos = samples.stream().map(SampleMapper::toDTO).toList();
+        List<SampleDetailDTO> dtos = samples.stream().map(SampleMapper::toDetailDTO).toList();
         return ResponseEntity.ok(dtos);
     }
 
