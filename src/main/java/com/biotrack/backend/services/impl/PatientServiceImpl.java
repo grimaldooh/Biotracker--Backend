@@ -237,4 +237,17 @@ private String generateClinicalHistoryS3Key(UUID patientId) {
     long timestamp = System.currentTimeMillis();
     return String.format("clinical-history/%d_%s_summary.txt", timestamp, patientId.toString());
 }
+
+@Override
+public List<Patient> searchPatients(String firstName, String lastName) {
+    // Si ambos son nulos o vacíos, retorna todos
+    if ((firstName == null || firstName.isBlank()) && (lastName == null || lastName.isBlank())) {
+        return patientRepository.findAll();
+    }
+    // Si solo uno es nulo, usa "" para que el filtro sea inclusivo
+    return patientRepository.findByFirstNameContainingIgnoreCaseAndLastNameContainingIgnoreCase(
+        firstName != null ? firstName : "",
+        lastName != null ? lastName : ""
+    );
+}
 }

@@ -102,6 +102,17 @@ public class PatientController {
         return ResponseEntity.ok(PatientMapper.toDTOCreation(patient));
     }
 
+    @GetMapping("/getPatientsByName")
+    @Operation(summary = "Search patients by first name and/or last name", description = "Retrieve patients filtered by first name and/or last name (case insensitive)")
+    @ApiResponse(responseCode = "200", description = "Patient list retrieved successfully")
+    public ResponseEntity<List<PatientCreationDTO>> searchPatients(
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName) {
+        List<Patient> patients = patientService.searchPatients(firstName, lastName);
+        List<PatientCreationDTO> dtos = patients.stream().map(PatientMapper::toDTOCreation).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
     @PutMapping("/{id}")
     @Operation(
         summary = "Update patient",
@@ -165,7 +176,7 @@ public class PatientController {
         ClinicalHistoryRecord record = patientService.getLatestRecord(patientId);
         return ResponseEntity.ok(ClinicalHistoryRecordMapper.toDTO(record));
     }
-
+    
     // Exception handlers con tipos específicos
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(
