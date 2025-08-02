@@ -139,96 +139,78 @@ public ClinicalHistoryRecord getLatestRecord(UUID patientId) {
 
 private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> visits, List<Report> reports) {
     StringBuilder prompt = new StringBuilder();
-    prompt.append("You are a board-certified physician. Your task is to generate a comprehensive clinical summary for the following patient. \n")
-          .append("You MUST strictly follow the structure shown in the EXAMPLE at the end of this prompt. For each medical visit and each study report, ALWAYS display the date and a clear summary as shown. Do not omit any visit or report. Do not invent data. Use the real data provided.\n\n");
+    prompt.append("You are a board-certified physician. Your task is to generate a comprehensive clinical summary for the following patient.\n");
+    prompt.append("IMPORTANT: Your response MUST be a valid JSON object with the following structure and field names. DO NOT return plain text, markdown, or any other format. Only return the JSON object.\n\n");
 
+    prompt.append("EXAMPLE JSON STRUCTURE (use real patient data, do not invent or copy this example):\n");
+    prompt.append("{\n");
+    prompt.append("  \"reporteMedico\": {\n");
+    prompt.append("    \"paciente\": {\n");
+    prompt.append("      \"nombre\": \"Jane Smith\",\n");
+    prompt.append("      \"fechaNacimiento\": \"1990-05-15\",\n");
+    prompt.append("      \"curp\": \"SMIJ900515HDFRN9\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"historialMedico\": [\n");
+    prompt.append("      {\n");
+    prompt.append("        \"fechaVisita\": \"2025-06-05\",\n");
+    prompt.append("        \"diagnostico\": \"Observación inicial. Posible fatiga inducida por estrés.\",\n");
+    prompt.append("        \"recomendaciones\": [\"Monitorear la calidad del sueño\", \"Reducir la ingesta de cafeína\", \"Revisar exámenes generales si los síntomas persisten\"],\n");
+    prompt.append("        \"notas\": \"Primera visita del paciente. Refiere fatiga leve por las tardes. Sin otros síntomas relevantes.\"\n");
+    prompt.append("      }\n");
+    prompt.append("      // ... más visitas ...\n");
+    prompt.append("    ],\n");
+    prompt.append("    \"reportesEstudiosRecientes\": [\n");
+    prompt.append("      {\n");
+    prompt.append("        \"fechaEstudio\": \"2025-07-19\",\n");
+    prompt.append("        \"tipoMuestra\": \"Sangre\",\n");
+    prompt.append("        \"modeloAnalizador\": \"Sysmex XN-1000\",\n");
+    prompt.append("        \"hallazgosPrincipales\": \"El paciente presentó niveles elevados de colesterol total...\"\n");
+    prompt.append("      }\n");
+    prompt.append("      // ... más estudios ...\n");
+    prompt.append("    ],\n");
+    prompt.append("    \"resumen\": {\n");
+    prompt.append("      \"texto\": \"Jane Smith, una mujer de 35 años...\",\n");
+    prompt.append("      \"enfermedadesDetectadas\": [\"EHNA\", \"Colesterol elevado\"]\n");
+    prompt.append("    },\n");
+    prompt.append("    \"recomendaciones\": [\n");
+    prompt.append("      \"Debe continuar con la dieta...\",\n");
+    prompt.append("      \"Monitoreo regular de enzimas hepáticas...\"\n");
+    prompt.append("    ]\n");
+    prompt.append("  }\n");
+    prompt.append("}\n\n");
+
+    prompt.append("Now, using the real patient data below, generate the summary in the EXACT JSON structure above. Do not invent or omit any data. Use the patient's real visits, studies, and information.\n\n");
+
+    // Aquí puedes agregar la información real del paciente, visitas y reportes como contexto para la IA
     prompt.append("PATIENT INFORMATION:\n");
     prompt.append("- Name: ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\n");
-    prompt.append("- Gender: ").append(patient.getGender()).append("\n");
     prompt.append("- Birth Date: ").append(patient.getBirthDate()).append("\n");
     prompt.append("- CURP: ").append(patient.getCurp()).append("\n\n");
 
     prompt.append("MEDICAL VISIT HISTORY:\n");
-    prompt.append("For each visit, display the date and a concise summary including diagnosis, recommendations, and relevant notes.\n");
     for (MedicalVisit visit : visits) {
-        prompt.append("Visit Date: ").append(visit.getVisitDate()).append("\n");
-        prompt.append("Summary: ");
-        prompt.append("Diagnosis: ").append(visit.getDiagnosis()).append(". ");
-        prompt.append("Recommendations: ").append(visit.getRecommendations()).append(". ");
-        prompt.append("Notes: ").append(visit.getNotes()).append("\n\n");
+        prompt.append("- Date: ").append(visit.getVisitDate()).append(", Diagnosis: ").append(visit.getDiagnosis())
+              .append(", Recommendations: ").append(visit.getRecommendations())
+              .append(", Notes: ").append(visit.getNotes()).append("\n");
     }
 
-    prompt.append("RECENT STUDY REPORTS:\n");
-    prompt.append("For each study, display the collection date, sample type, and a summary of the main findings. If available, include analyzer model (for blood), extraction method (for DNA), or collection method (for saliva).\n");
+    prompt.append("\nRECENT STUDY REPORTS:\n");
     for (Report report : reports) {
         var sample = report.getSample();
-        prompt.append("Study Date: ").append(sample.getCollectionDate()).append("\n");
-        prompt.append("Sample Type: ").append(sample.getType()).append("\n");
+        prompt.append("- Date: ").append(sample.getCollectionDate())
+              .append(", Type: ").append(sample.getType());
         if (sample instanceof BloodSample blood) {
-            prompt.append("Analyzer Model: ").append(blood.getAnalyzerModel()).append("\n");
+            prompt.append(", Analyzer Model: ").append(blood.getAnalyzerModel());
         }
         if (sample instanceof DnaSample dna) {
-            prompt.append("Extraction Method: ").append(dna.getExtractionMethod()).append("\n");
+            prompt.append(", Extraction Method: ").append(dna.getExtractionMethod());
         }
         if (sample instanceof SalivaSample saliva) {
-            prompt.append("Collection Method: ").append(saliva.getCollectionMethod()).append("\n");
+            prompt.append(", Collection Method: ").append(saliva.getCollectionMethod());
         }
-        prompt.append("Main Findings: ");
         String content = s3Service.downloadTextContent(report.getS3Key());
-        prompt.append(content).append("\n\n");
+        prompt.append(", Main Findings: ").append(content).append("\n");
     }
-
-    prompt.append("INSTRUCTIONS FOR THE SUMMARY:\n");
-    prompt.append("- For each medical visit, explicitly state the date and summarize the diagnosis, recommendations, and notes.\n");
-    prompt.append("- For each study report, explicitly state the collection date, sample type,include analyzer model (for blood), extraction method (for DNA), or collection method (for saliva) and summarize the main findings.\n");
-    prompt.append("- Highlight important diagnoses, risk factors, and relevant findings from recent studies.\n");
-    prompt.append("- Provide clear recommendations for future care and follow-up.\n");
-
-    // === EXAMPLE STRUCTURE ===
-    prompt.append("IMPORTANT: The following is ONLY AN EXAMPLE OF THE STRUCTURE you must follow. DO NOT invent or copy this data. ALWAYS use the real patient data provided above.\n\n");
-    prompt.append("PATIENT SUMMARY:\n\n");
-    prompt.append("Patient Name: Name\n");
-    prompt.append("Date of Birth: Birthdate\n");
-    prompt.append("CURP: Curp\n\n");
-    prompt.append("MEDICAL VISIT HISTORY:\n\n");
-    prompt.append("1. Visit Date: 2025-07-01(Example)\n");
-    prompt.append("   - Diagnosis: Diagnosis resume\n");
-    prompt.append("   - Recommendations: Recommendation resume\n");
-    prompt.append("   - Notes: Notes resume\n\n");
-    prompt.append("2. Visit Date: 2025-07-10\n");
-    prompt.append("   - Diagnosis: \n");
-    prompt.append("   - Recommendations: \n");
-    prompt.append("   - Notes: \n\n");
-    prompt.append("3. Visit Date: 2025-07-18\n");
-    prompt.append("   - Diagnosis:\n");
-    prompt.append("   - Recommendations: \n");
-    prompt.append("   - Notes: \n\n");
-    prompt.append("//More medical visits can be shown depending on the amount of visits that were passed on prompt\n\n");
-    prompt.append("RECENT STUDY REPORTS:\n\n");
-    prompt.append("1. Study Date: 2025-07-19 (Example)\n");
-    prompt.append("   - Sample Type: Blood (Example)\n");
-    prompt.append("   - Analyzer Model: Sysmex XN-1000 (Example)\n");
-    prompt.append("   - Main Findings: The patient presented with abnormal levels of glucose, total cholesterol, LDL cholesterol, and triglycerides, suggesting …(Example)\n\n");
-    prompt.append("2. Study Date: \n");
-    prompt.append("   - Sample Type: \n");
-    prompt.append("   - Analyzer Model: \n");
-    prompt.append("   - Main Findings: \n\n");
-    prompt.append("3. Study Date: \n");
-    prompt.append("   - Sample Type: DNA (Example)\n");
-    prompt.append("   - Extraction Method: Silica Column (Example)\n");
-    prompt.append("   - Main Findings:\n\n");
-    prompt.append("4. Study Date: \n");
-    prompt.append("   - Sample Type: Blood (Example)\n");
-    prompt.append("   - Analyzer Model: \n");
-    prompt.append("   - Main Findings: \n\n");
-    prompt.append("5. Study Date:\n");
-    prompt.append("   - Sample Type: Saliva (Example)\n");
-    prompt.append("   - Collection Method : Passive drool (Example)\n");
-    prompt.append("   - Main Findings: Normal volume and viscosity of saliva sample. No specific … (Example)\n\n");
-    prompt.append("SUMMARY:\n");
-    prompt.append("Juan Perez, a 45-year-old male, has a history of hypertension and was recently diagnosed with …(Example)\n\n");
-    prompt.append("RECOMMENDATIONS:\n");
-    prompt.append("Juan should continue with the prescribed oral iron supplement and … (Example)\n");
 
     return prompt.toString();
 }
@@ -249,5 +231,22 @@ public List<Patient> searchPatients(String firstName, String lastName) {
         firstName != null ? firstName : "",
         lastName != null ? lastName : ""
     );
+}
+
+@Override
+public String getLatestSummaryText(UUID patientId) {
+    ClinicalHistoryRecord record = getLatestRecord(patientId);
+    if (record == null || record.getS3Url() == null) {
+        throw new RuntimeException("No summary file found for this patient");
+    }
+    // Extrae la key de S3 desde la URL
+    String s3Url = record.getS3Url();
+    String bucketPattern = ".s3.amazonaws.com/";
+    int keyStartIndex = s3Url.indexOf(bucketPattern);
+    if (keyStartIndex == -1) {
+        throw new IllegalArgumentException("Invalid S3 URL format: " + s3Url);
+    }
+    String s3Key = s3Url.substring(keyStartIndex + bucketPattern.length());
+    return s3Service.downloadTextContent(s3Key);
 }
 }
