@@ -28,6 +28,9 @@ public class MedicalVisitMapper {
         visit.setDiagnosis(dto.getDiagnosis());
         visit.setRecommendations(dto.getRecommendations());
         visit.setMedicalEntityId(dto.getMedicalEntityId());
+        if (dto.getType() == null) {
+            throw new IllegalArgumentException("Medical visit type is required and cannot be null");
+        }
         visit.setType(MedicalVisitType.valueOf(dto.getType().name()));
         visit.setMedicalArea(dto.getMedicalArea());
         return visit;

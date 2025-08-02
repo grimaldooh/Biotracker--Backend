@@ -1,8 +1,10 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.DoctorStatsDTO;
 import com.biotrack.backend.dto.UserDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.models.User;
+import com.biotrack.backend.services.MedicalVisitService;
 import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,9 +32,11 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final MedicalVisitService medicalVisitService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, MedicalVisitService medicalVisitService) {
         this.userService = userService;
+        this.medicalVisitService = medicalVisitService;
     }
 
     @PostMapping
@@ -172,6 +176,27 @@ public class UserController {
         List<User> medics = userService.getMedicsByHospitalId(hospitalId);
         List<UserDTO> dtos = medics.stream().map(UserMapper::toDTO).toList();
         return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/{doctorId}/stats")
+    @Operation(
+        summary = "Get doctor statistics",
+        description = "Returns statistics for a doctor: total patients, today's appointments, upcoming appointments, and completed appointments"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Doctor stats retrieved successfully",
+            content = @Content(schema = @Schema(implementation = DoctorStatsDTO.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Doctor not found with the provided ID"
+        )
+    })
+    public ResponseEntity<DoctorStatsDTO> getDoctorStats(@PathVariable UUID doctorId) {
+        DoctorStatsDTO stats = medicalVisitService.getDoctorStats(doctorId);
+        return ResponseEntity.ok(stats);
     }
 
     // Exception handlers locales para este controlador

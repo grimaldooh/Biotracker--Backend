@@ -1,5 +1,6 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.dto.DoctorStatsDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.User;
@@ -10,7 +11,12 @@ import com.biotrack.backend.services.MedicalVisitService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -20,7 +26,7 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
 
-    public MedicalVisitServiceImpl(MedicalVisitRepository repository, 
+    public MedicalVisitServiceImpl(MedicalVisitRepository repository,
                                    PatientRepository patientRepository,
                                    UserRepository userRepository) {
         this.repository = repository;
@@ -31,11 +37,11 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     @Override
     @Transactional
     public MedicalVisit create(MedicalVisit visit, UUID medical_entity_id) {
-       
+
         Patient patient = patientRepository.findById(visit.getPatient().getId())
-            .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
         User doctor = userRepository.findById(visit.getDoctor().getId())
-            .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         visit.setMedicalEntityId(medical_entity_id);
         return repository.save(visit);
@@ -43,7 +49,7 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
 
     @Override
     @Transactional
-    public MedicalVisit submitAdvance(UUID id ,MedicalVisit visit) {
+    public MedicalVisit submitAdvance(UUID id, MedicalVisit visit) {
         MedicalVisit existingVisit = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Medical visit not found"));
 
@@ -95,5 +101,40 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     @Override
     public List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId) {
         return repository.findByMedicalEntityId(medicalEntityId);
+    }
+
+    @Override
+    public DoctorStatsDTO getDoctorStats(UUID doctorId) {
+        // Todas las visitas del doctor
+        List<MedicalVisit> allVisits = repository.findByDoctorId(doctorId);
+
+        // Pacientes únicos
+        Set<UUID> uniquePatients = new HashSet<>();
+        for (MedicalVisit visit : allVisits) {
+            if (visit.getPatient() != null) {
+                uniquePatients.add(visit.getPatient().getId());
+            }
+        }
+        int totalPatients = uniquePatients.size();
+
+        // Hoy
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+        int todayAppointments = (int) allVisits.stream()
+                .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(startOfDay) && !v.getVisitDate().isAfter(endOfDay))
+                .count();
+
+        // Próximas (futuras, no completadas)
+        int upcomingAppointments = (int) allVisits.stream()
+                .filter(v -> v.getVisitDate() != null && v.getVisitDate().isAfter(endOfDay) && !v.isVisitCompleted())
+                .count();
+
+        // Completadas
+        int completedAppointments = (int) allVisits.stream()
+                .filter(MedicalVisit::isVisitCompleted)
+                .count();
+
+        return new DoctorStatsDTO(totalPatients, todayAppointments, upcomingAppointments, completedAppointments);
     }
 }

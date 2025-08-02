@@ -3,6 +3,7 @@ package com.biotrack.backend.repositories;
 import com.biotrack.backend.models.MedicalVisit;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,4 +22,7 @@ public interface MedicalVisitRepository extends JpaRepository<MedicalVisit, UUID
 
     // Todas las citas de una entidad médica
     List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId);
+
+    List<MedicalVisit> findByDoctorIdAndVisitDateBetween(UUID doctorId, LocalDateTime start, LocalDateTime end);
+
 }

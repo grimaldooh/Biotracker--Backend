@@ -7,6 +7,7 @@ import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.models.Sample;
+import com.biotrack.backend.models.enums.SampleStatus;
 import com.biotrack.backend.models.enums.SampleType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ public class SampleServiceImpl implements SampleService {
         } else {
             throw new IllegalArgumentException("Unsupported sample type");
         }
+        sample.setStatus(SampleStatus.COMPLETED); // Set default status
         return sampleRepository.save(sample);
     }
 

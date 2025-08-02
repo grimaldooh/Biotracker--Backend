@@ -1,5 +1,6 @@
 package com.biotrack.backend.services;
 
+import com.biotrack.backend.dto.DoctorStatsDTO;
 import com.biotrack.backend.models.MedicalVisit;
 
 import java.util.List;
@@ -16,4 +17,5 @@ public interface MedicalVisitService {
     List<MedicalVisit> findAll();
     void deleteById(UUID id);
     List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId);
+    DoctorStatsDTO getDoctorStats(UUID doctorId);
 }
