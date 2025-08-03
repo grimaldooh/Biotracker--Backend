@@ -27,6 +27,10 @@ public record SampleDTO(
 
         String notes,
 
+        UUID doctorReferedId,
+
+        UUID medicalEntityId,
+
         BloodSampleDataDTO bloodData,
 
         DnaSampleDataDTO dnaData,

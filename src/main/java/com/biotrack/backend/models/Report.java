@@ -28,6 +28,12 @@ public class Report {
     
     @Column(name = "s3url") // Nota: usar el mismo nombre que tienes en otras tablas
     private String s3Url;
+
+    @Column(name = "s3_key_patient")
+    private String s3KeyPatient;
+    
+    @Column(name = "s3url_patient") // Nota: usar el mismo nombre que tienes en otras tablas
+    private String s3UrlPatient;
     
     @Column(name = "file_size")
     private Long fileSize;

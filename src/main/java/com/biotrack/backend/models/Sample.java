@@ -37,6 +37,11 @@ public abstract class Sample {
     @Enumerated(EnumType.STRING)
     protected SampleStatus status;
 
+    @Column(name = "doctor_refered_id", nullable = true)
+    protected UUID doctorReferedId;
+
+    protected UUID medicalEntityId;
+
     protected LocalDate collectionDate;
     protected String notes;
     protected LocalDate createdAt;

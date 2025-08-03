@@ -167,4 +167,9 @@ public class SampleServiceImpl implements SampleService {
     public List<Sample> findByPatientId(UUID patientId) {
         return sampleRepository.findByPatientId(patientId);
     }
+
+    @Override
+    public List<Sample> findLatest10ByMedicalEntityId(UUID medicalEntityId) {
+        return sampleRepository.findTop10ByMedicalEntityIdOrderByCollectionDateDesc(medicalEntityId);
+    }
 }

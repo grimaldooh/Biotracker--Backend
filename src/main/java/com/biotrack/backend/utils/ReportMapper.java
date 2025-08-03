@@ -10,6 +10,7 @@ public class ReportMapper {
                 report.getId(),
                 report.getSample().getId(),
                 report.getS3Url(),
+                report.getS3UrlPatient(),
                 report.getGeneratedAt(),
                 report.getOpenaiModel(),
                 report.getStatus(),

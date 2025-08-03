@@ -203,6 +203,28 @@ public class SampleController {
         return ResponseEntity.ok(dtos);
     }
 
+    @GetMapping("/hospital/{hospitalId}/latest")
+    @Operation(
+        summary = "Get latest 10 samples by hospital",
+        description = "Retrieve the latest 10 samples registered in a specific hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of latest samples for the hospital",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = SampleDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<SampleDTO>> getLatestSamplesByHospital(@PathVariable UUID hospitalId) {
+        List<Sample> samples = sampleService.findLatest10ByMedicalEntityId(hospitalId);
+        List<SampleDTO> dtos = samples.stream().map(SampleMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
     // Exception handlers locales para este controlador
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(

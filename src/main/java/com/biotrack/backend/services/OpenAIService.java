@@ -7,6 +7,7 @@ import java.util.List;
 public interface OpenAIService {
     String generateGeneticReport(List<Mutation> mutations, String patientInfo);
     String generateClinicalReport(String patientInfo);
+    String generatePatientFriendlyClinicalReport(String patientInfo);
     boolean isConfigured();
     String getModelUsed();
     String generateClinicalHistorySummary(String prompt);

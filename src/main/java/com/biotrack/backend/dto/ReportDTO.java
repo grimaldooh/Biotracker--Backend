@@ -16,6 +16,9 @@ public record ReportDTO(
     
     @Schema(description = "S3 storage URL of the report")
     String s3Url,
+
+    @Schema(description = "S3 storage URL of the patient report")
+    String s3UrlPatient,
     
     @Schema(description = "Report generation timestamp")
     LocalDateTime generatedAt,

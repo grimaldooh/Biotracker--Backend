@@ -143,18 +143,25 @@ public class ReportServiceImpl implements ReportService {
             
             String fullContext = patientContext + "\n" + sampleInfo + "\n" + sampleTypeInfo;
 
-            // Generar reporte clínico con OpenAI (sin mutaciones)
-            String reportContent = openAIService.generateClinicalReport(fullContext);
+            // Generar AMBOS reportes con OpenAI
+            String clinicalReportContent = openAIService.generateClinicalReport(fullContext);
+            String patientFriendlyReportContent = openAIService.generatePatientFriendlyClinicalReport(fullContext);
 
-            // Subir reporte a S3
+            // Subir AMBOS reportes a S3
             String s3Key = generateReportS3Key(report.getId());
-            String s3Url = s3Service.uploadTextContent(reportContent, s3Key);
+            String s3KeyPatient = generatePatientReportS3Key(report.getId());
+            
+            String s3Url = s3Service.uploadTextContent(clinicalReportContent, s3Key);
+            String s3UrlPatient = s3Service.uploadTextContent(patientFriendlyReportContent, s3KeyPatient);
 
             long processingTime = System.currentTimeMillis() - startTime;
 
+            // Actualizar reporte con AMBOS archivos
             report.setS3Key(s3Key);
             report.setS3Url(s3Url);
-            report.setFileSize((long) reportContent.getBytes().length);
+            report.setS3KeyPatient(s3KeyPatient);
+            report.setS3UrlPatient(s3UrlPatient);
+            report.setFileSize((long) clinicalReportContent.getBytes().length);
             report.setProcessingTimeMs(processingTime);
             report.setStatus(ReportStatus.COMPLETED);
 
@@ -196,13 +203,21 @@ public class ReportServiceImpl implements ReportService {
     public void deleteReport(UUID reportId) {
         Report report = findById(reportId);
         
-        // Eliminar archivo de S3 si existe
+        // Eliminar archivo técnico de S3 si existe
         if (report.getS3Key() != null) {
             try {
                 s3Service.deleteFile(report.getS3Key());
             } catch (Exception e) {
-                // Log pero no fallar si el archivo no existe en S3
-                System.err.println("Warning: Could not delete report file from S3: " + e.getMessage());
+                System.err.println("Warning: Could not delete technical report file from S3: " + e.getMessage());
+            }
+        }
+        
+        // Eliminar archivo del paciente de S3 si existe
+        if (report.getS3KeyPatient() != null) {
+            try {
+                s3Service.deleteFile(report.getS3KeyPatient());
+            } catch (Exception e) {
+                System.err.println("Warning: Could not delete patient report file from S3: " + e.getMessage());
             }
         }
         
@@ -262,5 +277,13 @@ public class ReportServiceImpl implements ReportService {
     private String generateReportS3Key(UUID reportId) {
         long timestamp = System.currentTimeMillis();
         return String.format("reports/%d_%s_genetic_report.txt", timestamp, reportId.toString());
+    }
+
+    /**
+     * Genera el key único para el reporte del paciente en S3
+     */
+    private String generatePatientReportS3Key(UUID reportId) {
+        long timestamp = System.currentTimeMillis();
+        return String.format("reports/%d_%s_patient_friendly_report.txt", timestamp, reportId.toString());
     }
 }

@@ -19,6 +19,8 @@ public record SampleCreationDTO(
     SampleStatus status,
     LocalDate collectionDate,
     String notes,
+    UUID doctorReferedId,
+    UUID medicalEntityId,
     BloodSampleDataDTO bloodData,
     DnaSampleDataDTO dnaData,
     SalivaSampleDataDTO salivaData

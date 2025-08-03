@@ -27,6 +27,8 @@ public class SampleMapper {
                 blood.getStatus(),
                 blood.getCollectionDate(),
                 blood.getNotes(),
+                blood.getDoctorReferedId(),
+                blood.getMedicalEntityId(),
                 // Mapea los datos específicos
                 new BloodSampleDataDTO(
                     blood.getGlucoseMgDl(),
@@ -74,6 +76,8 @@ public class SampleMapper {
                 dna.getStatus(),
                 dna.getCollectionDate(),
                 dna.getNotes(),
+                dna.getDoctorReferedId(),
+                dna.getMedicalEntityId(),
                 null,
                 new DnaSampleDataDTO(
                     dna.getConcentrationNgUl(),
@@ -112,6 +116,8 @@ public class SampleMapper {
                 saliva.getStatus(),
                 saliva.getCollectionDate(),
                 saliva.getNotes(),
+                saliva.getDoctorReferedId(),
+                saliva.getMedicalEntityId(),
                 null,
                 null,
                 new SalivaSampleDataDTO(
@@ -137,6 +143,8 @@ public class SampleMapper {
             sample.getStatus(),
             sample.getCollectionDate(),
             sample.getNotes(),
+            sample.getDoctorReferedId(),
+            sample.getMedicalEntityId(),
             null,
             null,
             null
