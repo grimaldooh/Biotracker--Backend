@@ -88,7 +88,7 @@ public class OpenAIServiceImpl implements OpenAIService {
     }
 
     /**
-     * Construye el prompt especializado para análisis genético - versión avanzada
+     * Construye el prompt especializado para análisis genético - versión JSON estructurada con correlación médica trazable
      */
     private String buildGeneticPrompt(List<Mutation> mutations, String patientInfo) {
         // Validar que no tengamos demasiadas mutaciones (límite de tokens)
@@ -99,9 +99,10 @@ public class OpenAIServiceImpl implements OpenAIService {
         StringBuilder prompt = new StringBuilder();
         
         prompt.append("You are a board-certified clinical geneticist with expertise in molecular genetics and personalized medicine. ");
-        prompt.append("Analyze the following genetic variants and provide a comprehensive clinical interpretation.\n\n");
+        prompt.append("Analyze the following genetic variants and provide a comprehensive clinical interpretation in English, ");
+        prompt.append("correlating the genetic findings with the patient's medical history and recent laboratory studies.\n\n");
         
-        prompt.append("PATIENT CONTEXT:\n");
+        prompt.append("PATIENT CONTEXT AND MEDICAL HISTORY:\n");
         prompt.append(patientInfo != null ? patientInfo : "Patient information not provided");
         prompt.append("\n\n");
         
@@ -117,41 +118,126 @@ public class OpenAIServiceImpl implements OpenAIService {
         }
         
         prompt.append("REPORT REQUIREMENTS:\n");
-        prompt.append("Please structure your analysis as follows:\n\n");
+        prompt.append("Your response MUST be a valid JSON object with the following structure and field names. Do NOT return plain text, markdown, or any other format. Only return the JSON object.\n\n");
         
-        prompt.append("1. EXECUTIVE SUMMARY\n");
-        prompt.append("   • Overall genetic risk assessment\n");
-        prompt.append("   • Key findings summary\n\n");
+        prompt.append("EXACT JSON STRUCTURE (use real patient and variant data, do not invent or copy this example):\n");
+        prompt.append("{\n");
+        prompt.append("  \"genetic_analysis_report\": {\n");
+        prompt.append("    \"patient_summary\": {\n");
+        prompt.append("      \"name\": \"Patient's Name\",\n");
+        prompt.append("      \"analysis_date\": \"YYYY-MM-DD\",\n");
+        prompt.append("      \"total_variants_analyzed\": 0\n");
+        prompt.append("    },\n");
+        prompt.append("    \"executive_summary\": {\n");
+        prompt.append("      \"overall_risk_assessment\": \"High/Medium/Low risk assessment with brief explanation\",\n");
+        prompt.append("      \"key_findings\": \"Most significant genetic findings in 2-3 sentences\",\n");
+        prompt.append("      \"clinical_priority\": \"Immediate/Routine/Monitoring - level of clinical attention needed\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"variant_analysis\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"gene\": \"Gene name\",\n");
+        prompt.append("        \"chromosome\": \"Chromosome location\",\n");
+        prompt.append("        \"variant_type\": \"Type of genetic variant\",\n");
+        prompt.append("        \"pathogenicity_classification\": \"Pathogenic/Likely Pathogenic/VUS/Likely Benign/Benign\",\n");
+        prompt.append("        \"clinical_significance\": \"Detailed explanation of what this variant means clinically\",\n");
+        prompt.append("        \"population_frequency\": \"How common this variant is in the general population\",\n");
+        prompt.append("        \"inheritance_pattern\": \"Autosomal dominant/recessive/X-linked/etc.\",\n");
+        prompt.append("        \"associated_conditions\": [\"List of diseases or conditions associated with this variant\"]\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"medical_history_correlation\": {\n");
+        prompt.append("      \"genetic_explanation_for_symptoms\": {\n");
+        prompt.append("        \"analysis\": \"How the identified genetic variants may explain the patient's documented medical history and symptoms\",\n");
+        prompt.append("        \"referenced_sample_evidence\": [\n");
+        prompt.append("          {\n");
+        prompt.append("            \"sample_id\": \"UUID of the referenced sample\",\n");
+        prompt.append("            \"finding\": \"What clinical or laboratory finding this sample supports (e.g., 'HIGH cholesterol', 'Elevated ALT/AST', 'Normal platelets')\"\n");
+        prompt.append("          }\n");
+        prompt.append("          // ...more referenced samples as needed...\n");
+        prompt.append("        ]\n");
+        prompt.append("      },\n");
+        prompt.append("      \"laboratory_findings_correlation\": {\n");
+        prompt.append("        \"analysis\": \"Correlation between genetic variants and recent laboratory abnormalities (elevated enzymes, cholesterol, etc.)\",\n");
+        prompt.append("        \"referenced_sample_ids\": [\"List of sample IDs that show these abnormalities\"]\n");
+        prompt.append("      },\n");
+        prompt.append("      \"progression_pattern_analysis\": {\n");
+        prompt.append("        \"analysis\": \"How the patient's medical timeline aligns with expected genetic disease progression\",\n");
+        prompt.append("        \"referenced_medical_visits\": [\"Relevant medical visit dates that support this progression pattern\"]\n");
+        prompt.append("      },\n");
+        prompt.append("      \"unexplained_findings\": {\n");
+        prompt.append("        \"analysis\": \"Medical findings that are NOT explained by the identified genetic variants\",\n");
+        prompt.append("        \"referenced_sample_ids\": [\"List of sample IDs showing unexplained findings\"],\n");
+        prompt.append("        \"additional_testing_needed\": \"Recommendations for additional tests to explain these findings\"\n");
+        prompt.append("      },\n");
+        prompt.append("      \"genetic_predisposition_confirmation\": {\n");
+        prompt.append("        \"analysis\": \"Which aspects of the patient's health history support or contradict the genetic findings\",\n");
+        prompt.append("        \"supporting_evidence\": [\"List of clinical findings that support genetic interpretations with their sample IDs\"],\n");
+        prompt.append("        \"contradicting_evidence\": [\"List of clinical findings that contradict genetic interpretations with their sample IDs\"]\n");
+        prompt.append("      },\n");
+        prompt.append("      \"family_history_implications\": \"What the genetic findings suggest about potential family member risks based on inheritance patterns\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"clinical_implications\": {\n");
+        prompt.append("      \"disease_risk\": \"Assessment of disease risk based on identified variants and current medical status\",\n");
+        prompt.append("      \"phenotypic_manifestations\": \"Potential physical or clinical signs to watch for, considering current symptoms\",\n");
+        prompt.append("      \"penetrance_information\": \"Likelihood that genetic variants will actually cause disease, given current medical presentation\",\n");
+        prompt.append("      \"age_of_onset_considerations\": \"When symptoms might appear or progress, considering patient's current age and medical timeline\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"clinical_recommendations\": {\n");
+        prompt.append("      \"immediate_actions\": [\"List of urgent medical actions needed based on genetic and clinical correlation\"],\n");
+        prompt.append("      \"monitoring_schedule\": \"Recommended frequency and type of medical monitoring tailored to genetic risk and current health status\",\n");
+        prompt.append("      \"therapeutic_considerations\": \"Potential treatments or interventions considering both genetic predisposition and current medical conditions\",\n");
+        prompt.append("      \"lifestyle_modifications\": [\"Diet, exercise, environmental factors specifically relevant to genetic findings and current health issues\"],\n");
+        prompt.append("      \"family_screening\": \"Recommendations for testing family members based on identified variants and inheritance patterns\",\n");
+        prompt.append("      \"genetic_counseling\": \"Whether genetic counseling is recommended and why, considering family implications\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"technical_details\": {\n");
+        prompt.append("      \"methodology\": \"Brief description of genetic testing method used\",\n");
+        prompt.append("      \"coverage_limitations\": \"What areas of the genome were not fully analyzed\",\n");
+        prompt.append("      \"variant_interpretation_databases\": [\"ClinVar\", \"OMIM\", \"Other databases referenced\"],\n");
+        prompt.append("      \"analysis_limitations\": \"Technical or interpretive limitations of this analysis\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"follow_up_recommendations\": {\n");
+        prompt.append("      \"additional_testing\": \"Recommendations for further genetic or clinical testing based on correlation analysis\",\n");
+        prompt.append("      \"specialist_referrals\": [\"Types of medical specialists to consult considering genetic findings and medical history\"],\n");
+        prompt.append("      \"reanalysis_timeline\": \"When genetic data should be reanalyzed with updated databases\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"important_disclaimers\": {\n");
+        prompt.append("      \"interpretation_certainty\": \"Level of confidence in the interpretation given available medical history\",\n");
+        prompt.append("      \"evolving_knowledge\": \"Note that genetic knowledge continues to evolve\",\n");
+        prompt.append("      \"clinical_correlation\": \"Importance of correlating with clinical presentation and ongoing medical care\",\n");
+        prompt.append("      \"evidence_limitations\": \"Any limitations in the evidence used for correlations and interpretations\"\n");
+        prompt.append("    }\n");
+        prompt.append("  }\n");
+        prompt.append("}\n\n");
         
-        prompt.append("2. VARIANT CLASSIFICATION & ANALYSIS\n");
-        prompt.append("   • Individual variant interpretation\n");
-        prompt.append("   • Pathogenicity assessment (following ACMG guidelines when applicable)\n");
-        prompt.append("   • Population frequency considerations\n\n");
+        prompt.append("CRITICAL ANALYSIS GUIDELINES:\n");
+        prompt.append("• Follow ACMG/AMP guidelines for variant classification when applicable\n");
+        prompt.append("• Reference established genetic databases (ClinVar, OMIM, gnomAD) appropriately\n");
+        prompt.append("• Use evidence-based interpretations and avoid speculation\n");
+        prompt.append("• MANDATORY FOR MEDICAL CORRELATIONS: Always include sample IDs when referencing laboratory findings or medical history\n");
+        prompt.append("• TRACEABILITY: Every medical history correlation MUST reference specific sample IDs from the patient's medical reports\n");
+        prompt.append("• Use only the sample IDs provided in the patient medical history context (idMuestra fields)\n");
+        prompt.append("• If a clinical finding cannot be explained by the provided variants, clearly state this\n");
+        prompt.append("• Distinguish between confirmed genetic findings and clinical inferences\n");
+        prompt.append("• Explain which medical findings support or contradict the genetic interpretations with specific sample ID references\n");
+        prompt.append("• Consider disease progression timelines and how they align with genetic expectations\n");
+        prompt.append("• Identify gaps where genetics cannot explain observed medical findings\n");
+        prompt.append("• Provide actionable clinical guidance that integrates genetic risk with current health status\n");
+        prompt.append("• Consider family implications based on inheritance patterns and medical history\n\n");
         
-        prompt.append("3. CLINICAL SIGNIFICANCE\n");
-        prompt.append("   • Disease associations\n");
-        prompt.append("   • Phenotypic implications\n");
-        prompt.append("   • Inheritance patterns\n\n");
+        prompt.append("MEDICAL CORRELATION EVIDENCE REQUIREMENTS:\n");
+        prompt.append("• Every laboratory finding correlation must be backed by specific sample IDs (idMuestra)\n");
+        prompt.append("• Use only the sample IDs provided in the reportesEstudiosRecientes section\n");
+        prompt.append("• When referencing medical visits, use the fechaVisita dates provided in historialMedico\n");
+        prompt.append("• Maintain scientific rigor and avoid overinterpretation\n");
+        prompt.append("• Clearly separate genetic analysis from medical history correlation\n\n");
         
-        prompt.append("4. CLINICAL RECOMMENDATIONS\n");
-        prompt.append("   • Monitoring recommendations\n");
-        prompt.append("   • Therapeutic considerations\n");
-        prompt.append("   • Family screening suggestions\n");
-        prompt.append("   • Lifestyle modifications if applicable\n\n");
-        
-        prompt.append("5. LIMITATIONS & CONSIDERATIONS\n");
-        prompt.append("   • Technical limitations\n");
-        prompt.append("   • Variant interpretation limitations\n");
-        prompt.append("   • Recommendations for additional testing\n\n");
-        
-        prompt.append("FORMAT GUIDELINES:\n");
-        prompt.append("• Use clear, professional medical language\n");
-        prompt.append("• Include relevant references to established genetic databases (ClinVar, OMIM) when applicable\n");
-        prompt.append("• Maintain objectivity and evidence-based interpretations\n");
-        prompt.append("• Clearly distinguish between established facts and clinical recommendations");
+        prompt.append("Now, using the real patient data, medical history, and genetic variant information provided above, generate the genetic analysis report in the EXACT JSON structure. ");
+        prompt.append("Pay special attention to correlating the genetic findings with the patient's documented medical timeline and laboratory abnormalities. ");
+        prompt.append("REMEMBER: Always include specific sample IDs (idMuestra) when referencing laboratory findings to maintain full traceability of medical correlations.\n");
         
         // Verificar longitud aproximada (4 caracteres ≈ 1 token)
-        if (prompt.length() > 8000) { // ~2000 tokens máximo para el prompt
+        if (prompt.length() > 18000) { // Ajustado para la nueva estructura
             throw new RuntimeException("Prompt too long. Consider reducing mutation count or patient info.");
         }
         

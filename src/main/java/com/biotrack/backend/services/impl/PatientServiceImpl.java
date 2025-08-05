@@ -163,6 +163,7 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
     prompt.append("      {\n");
     prompt.append("        \"fechaEstudio\": \"2025-07-19\",\n");
     prompt.append("        \"tipoMuestra\": \"Sangre\",\n");
+    prompt.append("        \"idMuestra\": \"123e4567-e89b-12d3-a456-426614174000\",\n");
     prompt.append("        \"modeloAnalizador\": \"Sysmex XN-1000\",\n");
     prompt.append("        \"hallazgosPrincipales\": \"El paciente presentó niveles elevados de colesterol total...\"\n");
     prompt.append("      }\n");
@@ -170,18 +171,70 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
     prompt.append("    ],\n");
     prompt.append("    \"resumen\": {\n");
     prompt.append("      \"texto\": \"Jane Smith, una mujer de 35 años...\",\n");
-    prompt.append("      \"enfermedadesDetectadas\": [\"EHNA\", \"Colesterol elevado\"]\n");
+    prompt.append("      \"enfermedadesDetectadas\": [\"EHNA\", \"Colesterol elevado\"],\n");
+    prompt.append("      \"evidenciaRespalda\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"enfermedad\": \"Colesterol elevado\",\n");
+    prompt.append("          \"idMuestraRespaldo\": \"123e4567-e89b-12d3-a456-426614174000\",\n");
+    prompt.append("          \"hallazgoEspecifico\": \"Colesterol total: 195 mg/dL (elevado)\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ]\n");
     prompt.append("    },\n");
     prompt.append("    \"recomendaciones\": [\n");
     prompt.append("      \"Debe continuar con la dieta...\",\n");
     prompt.append("      \"Monitoreo regular de enzimas hepáticas...\"\n");
-    prompt.append("    ]\n");
+    prompt.append("    ],\n");
+    prompt.append("    \"correlacionesClinitas\": {\n");
+    prompt.append("      \"analisisProgresion\": \"Análisis de cómo han evolucionado los síntomas y hallazgos a lo largo del tiempo\",\n");
+    prompt.append("      \"patronesIdentificados\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"patron\": \"Descripción del patrón clínico identificado\",\n");
+    prompt.append("          \"evidenciaRespaldo\": [\n");
+    prompt.append("            {\n");
+    prompt.append("              \"idMuestra\": \"UUID de la muestra que respalda este patrón\",\n");
+    prompt.append("              \"hallazgo\": \"Hallazgo específico de laboratorio o clínico\"\n");
+    prompt.append("            }\n");
+    prompt.append("          ],\n");
+    prompt.append("          \"fechasRelevantes\": [\"Fechas de visitas médicas que muestran este patrón\"]\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"hallazgosNoExplicados\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"hallazgo\": \"Hallazgo que requiere investigación adicional\",\n");
+    prompt.append("          \"idMuestra\": \"UUID de la muestra que muestra este hallazgo\",\n");
+    prompt.append("          \"recomendacionInvestigacion\": \"Qué estudios adicionales se recomiendan\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ]\n");
+    prompt.append("    },\n");
+    prompt.append("    \"trazabilidadEvidencia\": {\n");
+    prompt.append("      \"muestrasAnalizadas\": [\"Lista completa de IDs de muestras incluidas en este resumen\"],\n");
+    prompt.append("      \"visitasMedicasReferenciadas\": [\"Lista de fechas de visitas médicas analizadas\"],\n");
+    prompt.append("      \"nivelConfianzaResumen\": \"Alto/Medio/Bajo - basado en la cantidad y calidad de evidencia disponible\"\n");
+    prompt.append("    }\n");
     prompt.append("  }\n");
     prompt.append("}\n\n");
 
-    prompt.append("Now, using the real patient data below, generate the summary in the EXACT JSON structure above. Do not invent or omit any data. Use the patient's real visits, studies, and information.\n\n");
+    prompt.append("CRITICAL ANALYSIS GUIDELINES:\n");
+    prompt.append("• MANDATORY: Every clinical finding, disease detection, or medical correlation MUST be backed by specific sample IDs (idMuestra)\n");
+    prompt.append("• TRACEABILITY: All medical conclusions must reference the specific samples that support them\n");
+    prompt.append("• Use only the sample IDs provided in the medical reports and studies\n");
+    prompt.append("• When identifying patterns or progressions, reference specific visit dates and sample IDs\n");
+    prompt.append("• Clearly separate confirmed findings (with sample evidence) from clinical observations\n");
+    prompt.append("• If a clinical finding cannot be supported by laboratory evidence, clearly state this in hallazgosNoExplicados\n");
+    prompt.append("• Maintain medical accuracy and avoid speculation not supported by data\n");
+    prompt.append("• Provide actionable recommendations based on evidence-backed findings\n\n");
 
-    // Aquí puedes agregar la información real del paciente, visitas y reportes como contexto para la IA
+    prompt.append("EVIDENCE REQUIREMENTS:\n");
+    prompt.append("• Every disease in 'enfermedadesDetectadas' must have corresponding evidence in 'evidenciaRespalda'\n");
+    prompt.append("• Every clinical pattern must reference specific sample IDs and visit dates\n");
+    prompt.append("• Use only the sample IDs provided in the study reports\n");
+    prompt.append("• Maintain scientific rigor and evidence-based conclusions\n");
+    prompt.append("• Include all sample IDs in 'trazabilidadEvidencia.muestrasAnalizadas'\n\n");
+
+    prompt.append("Now, using the real patient data below, generate the summary in the EXACT JSON structure above. ");
+    prompt.append("REMEMBER: Always include specific sample IDs (idMuestra) when making clinical correlations to maintain full traceability.\n\n");
+
+    // Información real del paciente
     prompt.append("PATIENT INFORMATION:\n");
     prompt.append("- Name: ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\n");
     prompt.append("- Birth Date: ").append(patient.getBirthDate()).append("\n");
@@ -189,28 +242,35 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
 
     prompt.append("MEDICAL VISIT HISTORY:\n");
     for (MedicalVisit visit : visits) {
-        prompt.append("- Date: ").append(visit.getVisitDate()).append(", Diagnosis: ").append(visit.getDiagnosis())
-              .append(", Recommendations: ").append(visit.getRecommendations())
-              .append(", Notes: ").append(visit.getNotes()).append("\n");
+        prompt.append("- Visit ID: ").append(visit.getId()).append("\n");
+        prompt.append("  Date: ").append(visit.getVisitDate()).append("\n");
+        prompt.append("  Diagnosis: ").append(visit.getDiagnosis()).append("\n");
+        prompt.append("  Recommendations: ").append(visit.getRecommendations()).append("\n");
+        prompt.append("  Notes: ").append(visit.getNotes()).append("\n\n");
     }
 
-    prompt.append("\nRECENT STUDY REPORTS:\n");
+    prompt.append("RECENT STUDY REPORTS (with Sample IDs for traceability):\n");
     for (Report report : reports) {
         var sample = report.getSample();
-        prompt.append("- Date: ").append(sample.getCollectionDate())
-              .append(", Type: ").append(sample.getType());
+        prompt.append("- Sample ID: ").append(sample.getId()).append("\n");
+        prompt.append("  Date: ").append(sample.getCollectionDate()).append("\n");
+        prompt.append("  Type: ").append(sample.getType()).append("\n");
+        
         if (sample instanceof BloodSample blood) {
-            prompt.append(", Analyzer Model: ").append(blood.getAnalyzerModel());
+            prompt.append("  Analyzer Model: ").append(blood.getAnalyzerModel()).append("\n");
         }
         if (sample instanceof DnaSample dna) {
-            prompt.append(", Extraction Method: ").append(dna.getExtractionMethod());
+            prompt.append("  Extraction Method: ").append(dna.getExtractionMethod()).append("\n");
         }
         if (sample instanceof SalivaSample saliva) {
-            prompt.append(", Collection Method: ").append(saliva.getCollectionMethod());
+            prompt.append("  Collection Method: ").append(saliva.getCollectionMethod()).append("\n");
         }
+        
         String content = s3Service.downloadTextContent(report.getS3Key());
-        prompt.append(", Main Findings: ").append(content).append("\n");
+        prompt.append("  Main Findings: ").append(content).append("\n\n");
     }
+
+    prompt.append("Generate the clinical summary using the EXACT JSON structure provided, ensuring all clinical findings are properly traced to their supporting sample IDs.\n");
 
     return prompt.toString();
 }

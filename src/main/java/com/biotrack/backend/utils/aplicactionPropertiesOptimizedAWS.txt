@@ -33,7 +33,7 @@ logging.level.org.springframework.web=DEBUG
 # OpenAI Configuration
 openai.api.key=${OPENAI_API_KEY}
 openai.api.url=https://api.openai.com/v1/chat/completions
-openai.model=gpt-4
+openai.model=gpt-4.1-mini
 openai.max-tokens=2048
 openai.temperature=0.3
 

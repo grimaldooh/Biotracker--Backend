@@ -3,6 +3,7 @@ package com.biotrack.backend.services.impl;
 import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.Mutation;
+import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Report;
 import com.biotrack.backend.models.SalivaSample;
 import com.biotrack.backend.models.Sample;
@@ -25,19 +26,22 @@ public class ReportServiceImpl implements ReportService {
     private final SampleService sampleService;
     private final OpenAIService openAIService;
     private final S3Service s3Service;
+    private final PatientService patientService;
 
     public ReportServiceImpl(
             ReportRepository reportRepository,
             MutationRepository mutationRepository,
             SampleService sampleService,
             OpenAIService openAIService,
-            S3Service s3Service
+            S3Service s3Service,
+            PatientService patientService
     ) {
         this.reportRepository = reportRepository;
         this.mutationRepository = mutationRepository;
         this.sampleService = sampleService;
         this.openAIService = openAIService;
         this.s3Service = s3Service;
+        this.patientService = patientService;
     }
 
     @Override
@@ -82,9 +86,10 @@ public class ReportServiceImpl implements ReportService {
         try {
             // 5. Construir información del paciente si no se proporciona
             String patientContext = buildPatientContext(sample);
-
+            String patientClinicalSummary = patientService.getLatestSummaryText(sample.getPatient().getId());
+            ///
             // 6. Generar reporte con OpenAI
-            String reportContent = openAIService.generateGeneticReport(mutations, patientContext);
+            String reportContent = openAIService.generateGeneticReport(mutations, patientClinicalSummary);
 
             // 7. Subir reporte a S3
             String s3Key = generateReportS3Key(report.getId());
