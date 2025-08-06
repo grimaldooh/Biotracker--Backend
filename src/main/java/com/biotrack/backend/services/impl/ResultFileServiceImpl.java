@@ -1,10 +1,10 @@
 package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.ResultFile;
-import com.biotrack.backend.models.Sample;
+import com.biotrack.backend.models.GeneticSample; // ✅ CAMBIAR: de Sample a GeneticSample
 import com.biotrack.backend.repositories.ResultFileRepository;
 import com.biotrack.backend.services.ResultFileService;
-import com.biotrack.backend.services.SampleService;
+import com.biotrack.backend.services.GeneticSampleService; // ✅ CAMBIAR: de SampleService a GeneticSampleService
 import com.biotrack.backend.services.S3Service;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -18,24 +18,24 @@ import java.util.UUID;
 public class ResultFileServiceImpl implements ResultFileService {
 
     private final ResultFileRepository resultFileRepository;
-    private final SampleService sampleService;
+    private final GeneticSampleService geneticSampleService; // ✅ CAMBIAR: de SampleService a GeneticSampleService
     private final S3Service s3Service;
 
-    public ResultFileServiceImpl(ResultFileRepository repo, SampleService sampleService, S3Service s3Service) {
+    public ResultFileServiceImpl(ResultFileRepository repo, GeneticSampleService geneticSampleService, S3Service s3Service) {
         this.resultFileRepository = repo;
-        this.sampleService = sampleService;
+        this.geneticSampleService = geneticSampleService; // ✅ CAMBIAR
         this.s3Service = s3Service;
     }
 
     @Override
-    public ResultFile uploadAndLink(MultipartFile file, UUID sampleId) {
+    public ResultFile uploadAndLink(MultipartFile file, UUID geneticSampleId) { // ✅ CAMBIAR: parámetro de sampleId a geneticSampleId
         // Generar nombre único para el archivo en S3
-        String keyName = generateS3Key(file.getOriginalFilename(), sampleId);
+        String keyName = generateS3Key(file.getOriginalFilename(), geneticSampleId);
 
         // Subir archivo con el keyName generado
         String s3Url = s3Service.uploadFile(file, keyName);
 
-        Sample sample = sampleService.findById(sampleId);
+        GeneticSample geneticSample = geneticSampleService.findById(geneticSampleId); // ✅ CAMBIAR
 
         ResultFile resultFile = ResultFile.builder()
                 .fileName(file.getOriginalFilename())
@@ -44,7 +44,7 @@ public class ResultFileServiceImpl implements ResultFileService {
                 .fileSize(file.getSize())
                 .contentType(file.getContentType())
                 .uploadedAt(LocalDateTime.now())
-                .sample(sample)
+                .geneticSample(geneticSample) // ✅ CAMBIAR: de sample a geneticSample
                 .build();
 
         return resultFileRepository.save(resultFile);
@@ -62,8 +62,8 @@ public class ResultFileServiceImpl implements ResultFileService {
     }
 
     @Override
-    public List<ResultFile> findBySampleId(UUID sampleId) {
-        return resultFileRepository.findBySampleId(sampleId);
+    public List<ResultFile> findByGeneticSampleId(UUID geneticSampleId) { 
+        return resultFileRepository.findByGeneticSampleId(geneticSampleId);
     }
 
     @Override
@@ -92,12 +92,12 @@ public class ResultFileServiceImpl implements ResultFileService {
 
     /**
      * Genera un nombre único para el archivo en S3
-     * Formato: results/{timestamp}_{sampleId}_{originalFileName}
+     * Formato: results/{timestamp}_{geneticSampleId}_{originalFileName}
      */
-    private String generateS3Key(String originalFileName, UUID sampleId) {
+    private String generateS3Key(String originalFileName, UUID geneticSampleId) { // ✅ CAMBIAR: parámetro
         long timestamp = System.currentTimeMillis();
         String sanitizedFileName = sanitizeFileName(originalFileName);
-        return String.format("results/%d_%s_%s", timestamp, sampleId.toString(), sanitizedFileName);
+        return String.format("results/%d_%s_%s", timestamp, geneticSampleId.toString(), sanitizedFileName);
     }
 
     /**

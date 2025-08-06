@@ -29,6 +29,6 @@ public class Mutation {
     private String comment;
 
     @ManyToOne
-    @JoinColumn(name = "sample_id")
-    private Sample sample;
+    @JoinColumn(name = "genetic_sample_id")
+    private GeneticSample sample;
 }

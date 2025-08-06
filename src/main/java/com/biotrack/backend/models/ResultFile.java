@@ -40,7 +40,13 @@ public class ResultFile {
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
     
+    // ✅ CAMBIAR: de Sample a GeneticSample
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sample_id", nullable = false)
-    private Sample sample;
+    @JoinColumn(name = "genetic_sample_id", nullable = false)
+    private GeneticSample geneticSample;
+    
+    // ✅ AGREGAR: Método getter con nombre legacy para compatibilidad durante migración
+    public GeneticSample getSample() {
+        return this.geneticSample;
+    }
 }

@@ -2,20 +2,23 @@ package com.biotrack.backend.repositories;
 
 import com.biotrack.backend.models.Sample;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.UUID;
+
 public interface SampleRepository extends JpaRepository<Sample, UUID> {
-    // Obtiene todos los samples vinculados a un paciente específico
-    List<Sample> findByPatientId(UUID patientId);
+    
+    // ✅ este funciona bien
+    @Query("SELECT s FROM Sample s WHERE s.patient.id = :patientId")
+    List<Sample> findByPatientId(@Param("patientId") UUID patientId);
 
-    // Para varios pacientes
-    List<Sample> findByPatientIdIn(List<UUID> patientIds);
+    // ✅ ahora también con JPQL, sin nativeQuery
+    @Query("SELECT s FROM Sample s WHERE s.patient.id IN :patientIds")
+    List<Sample> findByPatientIdIn(@Param("patientIds") List<UUID> patientIds);
 
-    // Obtiene los 10 samples más recientes de una entidad médica específica, ordenados por fecha de recolección
-    @Query("SELECT s FROM Sample s WHERE s.medicalEntityId = :medicalEntityId ORDER BY s.collectionDate DESC")
     List<Sample> findTop10ByMedicalEntityIdOrderByCollectionDateDesc(@Param("medicalEntityId") UUID medicalEntityId);
+
+    // Los métodos futuros que devuelvan entidades con herencia JOINED, usa siempre JPQL.
 }

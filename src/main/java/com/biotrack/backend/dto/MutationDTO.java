@@ -11,6 +11,6 @@ public record MutationDTO(
         String type,
         Relevance relevance,
         String comment,
-        UUID sampleId
+        UUID geneticSampleId // ✅ CAMBIAR: de sampleId a geneticSampleId
 ) {
 }

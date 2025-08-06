@@ -4,13 +4,18 @@ import com.biotrack.backend.dto.ResultFileDTO;
 import com.biotrack.backend.models.ResultFile;
 
 public class ResultFileMapper {
-    public static ResultFileDTO toDTO(ResultFile file) {
+    
+    public static ResultFileDTO toDTO(ResultFile resultFile) {
         return new ResultFileDTO(
-                file.getId(),
-                file.getFileName(), 
-                file.getS3Url(),
-                file.getUploadedAt(),
-                file.getSample().getId()
+                resultFile.getId(),
+                resultFile.getFileName(),
+                resultFile.getS3Key(),
+                resultFile.getS3Url(),
+                resultFile.getFileSize(),
+                resultFile.getContentType(),
+                resultFile.getProcessingStatus(),
+                resultFile.getUploadedAt(),
+                resultFile.getGeneticSample().getId() // ✅ CAMBIAR: usar geneticSample
         );
     }
 

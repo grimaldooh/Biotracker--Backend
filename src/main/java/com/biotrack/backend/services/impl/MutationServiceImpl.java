@@ -2,7 +2,7 @@ package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.ResultFile;
-import com.biotrack.backend.models.Sample;
+import com.biotrack.backend.models.GeneticSample; // ✅ CAMBIAR: de Sample a GeneticSample
 import com.biotrack.backend.models.enums.Relevance;
 import com.biotrack.backend.repositories.MutationRepository;
 import com.biotrack.backend.services.MutationService;
@@ -21,14 +21,14 @@ import java.util.UUID;
 public class MutationServiceImpl implements MutationService{
     private final ResultFileService resultFileService;
     private final MutationRepository mutationRepository;
-    private final S3Service s3Service; // ✅ Agregar S3Service
+    private final S3Service s3Service;
 
     public MutationServiceImpl(MutationRepository mutationRepository, 
                               ResultFileService resultFileService,
-                              S3Service s3Service){ // ✅ Inyectar S3Service
+                              S3Service s3Service){
         this.mutationRepository = mutationRepository;
         this.resultFileService = resultFileService;
-        this.s3Service = s3Service; // ✅ Asignar S3Service
+        this.s3Service = s3Service;
     }
 
     @Override
@@ -57,12 +57,12 @@ public class MutationServiceImpl implements MutationService{
     @Override
     public List<Mutation> processResultFile(UUID resultFileId) {
         ResultFile resultFile = resultFileService.findById(resultFileId);
-        Sample sample = resultFile.getSample();
+        // ✅ CAMBIAR: Ahora obtenemos GeneticSample en lugar de Sample
+        GeneticSample geneticSample = resultFile.getGeneticSample(); // Necesitarás actualizar ResultFile también
 
         List<Mutation> mutations = new ArrayList<>();
 
         try {
-            // ✅ Usar AWS SDK en lugar de URL directa
             String s3Key = extractS3KeyFromUrl(resultFile.getS3Url());
             InputStream inputStream = s3Service.downloadFile(s3Key);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -71,7 +71,7 @@ public class MutationServiceImpl implements MutationService{
             boolean first = true;
             while ((line = reader.readLine()) != null) {
                 if (first) {
-                    first = false; // Saltar header del CSV
+                    first = false;
                     continue;
                 }
 
@@ -84,7 +84,7 @@ public class MutationServiceImpl implements MutationService{
                         .type(parts[2].trim())
                         .relevance(Relevance.valueOf(parts[3].trim().toUpperCase()))
                         .comment(parts[4].trim())
-                        .sample(sample)
+                        .sample(geneticSample) // ✅ CAMBIAR: usar geneticSample
                         .build();
 
                 mutations.add(mutation);
@@ -100,11 +100,6 @@ public class MutationServiceImpl implements MutationService{
         }
     }
 
-    /**
-     * Extrae la key de S3 desde la URL completa
-     * Ejemplo: https://biotrack-results-files.s3.amazonaws.com/results/1752571461813_38fa3d6b-d486-4337-bd2f-059cb1f10d6b_file.csv
-     * Resultado: results/1752571461813_38fa3d6b-d486-4337-bd2f-059cb1f10d6b_file.csv
-     */
     private String extractS3KeyFromUrl(String s3Url) {
         String bucketPattern = ".s3.amazonaws.com/";
         int keyStartIndex = s3Url.indexOf(bucketPattern);

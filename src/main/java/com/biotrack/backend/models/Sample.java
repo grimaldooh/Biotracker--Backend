@@ -21,7 +21,11 @@ import java.util.UUID;
 @NoArgsConstructor // <-- Agrega esto
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Sample {
-    @Id
+    
+
+    @Column(name = "doctor_refered_id", nullable = true)
+    protected UUID doctorReferedId;
+@Id
     @GeneratedValue
     protected UUID id;
 
@@ -36,10 +40,6 @@ public abstract class Sample {
 
     @Enumerated(EnumType.STRING)
     protected SampleStatus status;
-
-    @Column(name = "doctor_refered_id", nullable = true)
-    protected UUID doctorReferedId;
-
     protected UUID medicalEntityId;
 
     protected LocalDate collectionDate;

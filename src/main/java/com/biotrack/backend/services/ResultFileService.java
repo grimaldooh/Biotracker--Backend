@@ -8,11 +8,20 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ResultFileService {
-    ResultFile uploadAndLink(MultipartFile file, UUID sampleId);
+    
+    // ✅ CAMBIAR: parámetro de sampleId a geneticSampleId
+    ResultFile uploadAndLink(MultipartFile file, UUID geneticSampleId);
+    
     List<ResultFile> findAll();
+    
     ResultFile findById(UUID id);
-    List<ResultFile> findBySampleId(UUID sampleId);
+    
+    // ✅ CAMBIAR: nombre del método
+    List<ResultFile> findByGeneticSampleId(UUID geneticSampleId);
+    
     Resource downloadFile(UUID fileId);
+    
     void deleteFile(UUID fileId);
+    
     ResultFile updateStatus(UUID fileId, String status);
 }

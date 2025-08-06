@@ -12,7 +12,7 @@ public class MutationMapper {
                 m.getType(),
                 m.getRelevance(),
                 m.getComment(),
-                m.getSample().getId()
+                m.getSample().getId() 
         );
     }
 }
