@@ -197,10 +197,10 @@ public class SampleController {
             description = "Patient not found with the provided ID"
         )
     })
-    public ResponseEntity<List<Sample>> getSamplesByPatient(@PathVariable UUID patientId) {
+    public ResponseEntity<List<SampleDetailDTO>> getSamplesByPatient(@PathVariable UUID patientId) {
         List<Sample> samples = sampleService.findByPatientId(patientId);
-        //List<SampleDetailDTO> dtos = samples.stream().map(SampleMapper::toDetailDTO).toList();
-        return ResponseEntity.ok(samples);
+        List<SampleDetailDTO> dtos = samples.stream().map(SampleMapper::toDetailDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/hospital/{hospitalId}/latest")
