@@ -3,11 +3,14 @@ package com.biotrack.backend.utils;
 import com.biotrack.backend.dto.GeneticSampleDTO;
 import com.biotrack.backend.dto.GeneticSampleCreationDTO;
 import com.biotrack.backend.dto.MutationDTO;
+import com.biotrack.backend.dto.MutationCreationDTO;
 import com.biotrack.backend.models.GeneticSample;
+import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.User;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +49,8 @@ public class GeneticSampleMapper {
     }
 
     public static GeneticSample fromCreationDTO(GeneticSampleCreationDTO dto, Patient patient, User registeredBy) {
-        return GeneticSample.builder()
+        // ✅ CREAR: La muestra genética base
+        GeneticSample geneticSample = GeneticSample.builder()
             .patient(patient)
             .registeredBy(registeredBy)
             .type(dto.type())
@@ -58,6 +62,30 @@ public class GeneticSampleMapper {
             .confidenceScore(dto.confidenceScore())
             .processingSoftware(dto.processingSoftware())
             .referenceGenome(dto.referenceGenome())
+            .mutations(new ArrayList<>()) // ✅ INICIALIZAR: Lista vacía de mutaciones
+            .build();
+
+        // ✅ AGREGAR: Mutaciones si vienen en el DTO
+        if (dto.mutations() != null && !dto.mutations().isEmpty()) {
+            List<Mutation> mutations = dto.mutations().stream()
+                .map(mutationDTO -> createMutationFromDTO(mutationDTO, geneticSample))
+                .collect(Collectors.toList());
+            
+            geneticSample.setMutations(mutations);
+        }
+
+        return geneticSample;
+    }
+
+    // ✅ NUEVO: Método auxiliar para crear mutaciones
+    private static Mutation createMutationFromDTO(MutationCreationDTO dto, GeneticSample geneticSample) {
+        return Mutation.builder()
+            .gene(dto.gene())
+            .chromosome(dto.chromosome())
+            .type(dto.type())
+            .relevance(dto.relevance())
+            .comment(dto.comment())
+            .sample(geneticSample)
             .build();
     }
 }

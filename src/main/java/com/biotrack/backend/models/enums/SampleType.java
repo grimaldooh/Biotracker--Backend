@@ -5,5 +5,6 @@ public enum SampleType {
     DNA,
     TISSUE,
     SALIVA,
-    URINE
+    URINE,
+    MUTATIONS
 }

@@ -25,7 +25,20 @@ public class GeneticSampleServiceImpl implements GeneticSampleService {
     @Transactional
     public GeneticSample create(GeneticSample geneticSample) {
         geneticSample.setCreatedAt(LocalDate.now());
-        return geneticSampleRepository.save(geneticSample);
+        
+        // ✅ GUARDAR: La muestra genética (las mutaciones se guardan en cascada)
+        GeneticSample saved = geneticSampleRepository.save(geneticSample);
+        
+        // ✅ ASEGURAR: Que las mutaciones apunten a la muestra guardada
+        if (saved.getMutations() != null) {
+            saved.getMutations().forEach(mutation -> {
+                if (mutation.getSample() == null) {
+                    mutation.setSample(saved);
+                }
+            });
+        }
+        
+        return saved;
     }
 
     @Override

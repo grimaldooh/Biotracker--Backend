@@ -2,10 +2,12 @@ package com.biotrack.backend.dto;
 
 import com.biotrack.backend.models.enums.SampleStatus;
 import com.biotrack.backend.models.enums.SampleType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public record GeneticSampleCreationDTO(
@@ -31,5 +33,12 @@ public record GeneticSampleCreationDTO(
 
         String processingSoftware,
 
-        String referenceGenome
+        String referenceGenome,
+
+        // ✅ AGREGAR: Lista de mutaciones que vienen del frontend
+        @Valid
+        List<MutationCreationDTO> mutations,
+
+        // ✅ AGREGAR: Conteo de mutaciones (opcional, se puede calcular)
+        Integer mutationCount
 ) {}
