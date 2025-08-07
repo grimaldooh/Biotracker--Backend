@@ -20,8 +20,12 @@ public class Report {
     private UUID id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sample_id", nullable = false)
+    @JoinColumn(name = "sample_id", nullable = true)
     private Sample sample;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "genetic_sample_id", nullable = true)
+    private GeneticSample geneticSample;
     
     @Column(name = "s3_key", nullable = true)
     private String s3Key;

@@ -2,6 +2,7 @@ package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
+import com.biotrack.backend.models.GeneticSample;
 import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Report;
@@ -27,6 +28,7 @@ public class ReportServiceImpl implements ReportService {
     private final OpenAIService openAIService;
     private final S3Service s3Service;
     private final PatientService patientService;
+    private final GeneticSampleService geneticSampleService;
 
     public ReportServiceImpl(
             ReportRepository reportRepository,
@@ -34,7 +36,8 @@ public class ReportServiceImpl implements ReportService {
             SampleService sampleService,
             OpenAIService openAIService,
             S3Service s3Service,
-            PatientService patientService
+            PatientService patientService,
+            GeneticSampleService geneticSampleService
     ) {
         this.reportRepository = reportRepository;
         this.mutationRepository = mutationRepository;
@@ -42,6 +45,7 @@ public class ReportServiceImpl implements ReportService {
         this.openAIService = openAIService;
         this.s3Service = s3Service;
         this.patientService = patientService;
+        this.geneticSampleService = geneticSampleService;
     }
 
     @Override
@@ -54,7 +58,7 @@ public class ReportServiceImpl implements ReportService {
     @Transactional
     public Report generateReportWithPatientInfo(UUID sampleId, String patientInfo) {
         // 1. Validaciones iniciales
-        Sample sample = sampleService.findById(sampleId);
+        GeneticSample sample = geneticSampleService.findById(sampleId);
         
         if (!openAIService.isConfigured()) {
             throw new RuntimeException("OpenAI service is not configured. Please check API key configuration.");
@@ -75,7 +79,7 @@ public class ReportServiceImpl implements ReportService {
 
         // 4. Crear reporte inicial con estado GENERATING
         Report report = Report.builder()
-                .sample(sample)
+                .geneticSample(sample)
                 .status(ReportStatus.GENERATING)
                 .generatedAt(LocalDateTime.now())
                 .openaiModel(openAIService.getModelUsed())
@@ -245,6 +249,38 @@ public class ReportServiceImpl implements ReportService {
      * Construye el contexto del paciente para el prompt
      */
     private String buildPatientContext(Sample sample) {
+        StringBuilder context = new StringBuilder();
+        
+        if (sample.getPatient() != null) {
+            context.append("Patient Information:\n");
+            context.append("- Name: ").append(sample.getPatient().getFirstName())
+                   .append(" ").append(sample.getPatient().getLastName()).append("\n");
+            context.append("- Gender: ").append(sample.getPatient().getGender()).append("\n");
+            context.append("- Birth Date: ").append(sample.getPatient().getBirthDate()).append("\n");
+            
+            if (sample.getPatient().getCurp() != null) {
+                context.append("- CURP: ").append(sample.getPatient().getCurp()).append("\n");
+            }
+        }
+        
+        context.append("Sample Information:\n");
+        context.append("- Sample Type: ").append(sample.getType()).append("\n");
+        context.append("- Collection Date: ").append(sample.getCollectionDate()).append("\n");
+        context.append("- Status: ").append(sample.getStatus()).append("\n");
+        
+        if (sample.getNotes() != null && !sample.getNotes().trim().isEmpty()) {
+            context.append("- Clinical Notes: ").append(sample.getNotes()).append("\n");
+        }
+        
+        // if (additionalInfo != null && !additionalInfo.trim().isEmpty()) {
+        //     context.append("\nAdditional Clinical Information:\n");
+        //     context.append(additionalInfo);
+        // }
+        
+        return context.toString();
+    }
+
+    private String buildPatientContext(GeneticSample sample) {
         StringBuilder context = new StringBuilder();
         
         if (sample.getPatient() != null) {

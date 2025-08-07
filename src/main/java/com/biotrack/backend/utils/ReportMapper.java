@@ -8,7 +8,7 @@ public class ReportMapper {
     public static ReportDTO toDTO(Report report) {
         return new ReportDTO(
                 report.getId(),
-                report.getSample().getId(),
+                report.getSample() != null ? report.getSample().getId() : null,
                 report.getS3Url(),
                 report.getS3UrlPatient(),
                 report.getGeneratedAt(),
