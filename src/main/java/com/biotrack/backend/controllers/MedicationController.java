@@ -1,5 +1,7 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.MedicationPatchDTO;
+import com.biotrack.backend.dto.MedicationResponseDTO;
 import com.biotrack.backend.models.Medication;
 import com.biotrack.backend.services.MedicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -105,16 +108,48 @@ public class MedicationController {
         summary = "Get medications for a patient",
         description = "Retrieve all medications prescribed to a specific patient"
     )
-    public ResponseEntity<List<Medication>> findByPatientId(@PathVariable UUID patientId) {
-        return ResponseEntity.ok(medicationService.findByPatientId(patientId));
+    public ResponseEntity<List<MedicationResponseDTO>> findByPatientId(@PathVariable UUID patientId) {
+        List<MedicationResponseDTO> medications = medicationService.getPatientMedicationsAsDTO(patientId);
+        return ResponseEntity.ok(medications);
     }
 
-   @GetMapping("/prescribed-by/{userId}")
+    @GetMapping("/prescribed-by/{userId}")
     @Operation(
         summary = "Get medications prescribed by a user",
         description = "Retrieve all medications prescribed by a specific user (doctor)"
     )
     public ResponseEntity<List<Medication>> findByPrescribedById(@PathVariable UUID userId) {
         return ResponseEntity.ok(medicationService.findByPrescribedById(userId));
+    }
+
+    @PatchMapping("/patient/{patientId}")
+    @Operation(
+        summary = "Update patient medication list",
+        description = "Add or remove medications from a patient's medication list using PATCH operations"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Medication list updated successfully",
+            content = @Content(schema = @Schema(implementation = MedicationResponseDTO.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid operation data or validation errors"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Patient not found"
+        )
+    })
+    public ResponseEntity<List<MedicationResponseDTO>> patchPatientMedications(
+            @Parameter(description = "Unique identifier of the patient")
+            @PathVariable UUID patientId,
+            @Valid @RequestBody MedicationPatchDTO patchDTO) {
+        
+        List<MedicationResponseDTO> updatedMedications = 
+            medicationService.patchPatientMedications(patientId, patchDTO);
+        
+        return ResponseEntity.ok(updatedMedications);
     }
 }

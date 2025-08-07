@@ -1,10 +1,20 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.dto.MedicationOperationDTO;
+import com.biotrack.backend.dto.MedicationPatchDTO;
+import com.biotrack.backend.dto.MedicationResponseDTO;
 import com.biotrack.backend.models.Medication;
+import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.User;
 import com.biotrack.backend.repositories.MedicationRepository;
 import com.biotrack.backend.services.MedicationService;
+import com.biotrack.backend.services.PatientService;
+import com.biotrack.backend.services.UserService;
+import com.biotrack.backend.utils.MedicationMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,9 +22,15 @@ import java.util.UUID;
 public class MedicationServiceImpl implements MedicationService {
 
     private final MedicationRepository repository;
+    private final PatientService patientService;
+    private final UserService userService;
 
-    public MedicationServiceImpl(MedicationRepository repository) {
+    public MedicationServiceImpl(MedicationRepository repository,
+                               PatientService patientService,
+                               UserService userService) {
         this.repository = repository;
+        this.patientService = patientService;
+        this.userService = userService;
     }
 
     @Override
@@ -46,5 +62,88 @@ public class MedicationServiceImpl implements MedicationService {
     @Override
     public List<Medication> findByPrescribedById(UUID userId) {
         return repository.findByPrescribedById(userId);
+    }
+
+    @Override
+    @Transactional
+    public List<MedicationResponseDTO> patchPatientMedications(UUID patientId, MedicationPatchDTO patchDTO) {
+        // Validar que el paciente existe
+        Patient patient = patientService.findById(patientId);
+
+        List<String> errors = new ArrayList<>();
+
+        // Procesar cada operación
+        for (MedicationOperationDTO operation : patchDTO.operations()) {
+            try {
+                if (operation.isAddOperation()) {
+                    processAddOperation(patient, operation);
+                } else if (operation.isRemoveOperation()) {
+                    processRemoveOperation(operation);
+                } else {
+                    errors.add("Operación no válida: " + operation.operation() +
+                              ". Solo se permiten 'ADD' o 'REMOVE'");
+                }
+            } catch (Exception e) {
+                errors.add("Error en operación " + operation.operation() + ": " + e.getMessage());
+            }
+        }
+
+        // Si hay errores, lanzar excepción
+        if (!errors.isEmpty()) {
+            throw new RuntimeException("Errores en operaciones PATCH: " + String.join("; ", errors));
+        }
+
+        // Retornar la lista actualizada
+        return getPatientMedicationsAsDTO(patientId);
+    }
+
+    @Override
+    public List<MedicationResponseDTO> getPatientMedicationsAsDTO(UUID patientId) {
+        List<Medication> medications = findByPatientId(patientId);
+        return medications.stream()
+                .map(MedicationMapper::toResponseDTO)
+                .toList();
+    }
+
+    // ✅ NUEVO: Procesar operación ADD
+    private void processAddOperation(Patient patient, MedicationOperationDTO operation) {
+        // Validar datos para ADD
+        if (!operation.isValidForAdd()) {
+            throw new RuntimeException("Datos incompletos para agregar medicamento. " +
+                                     "Se requieren: name, dosage, prescribedById");
+        }
+
+        // Obtener el usuario que prescribe
+        User prescribedBy = userService.getUserById(operation.prescribedById());
+
+        // Crear nuevo medicamento
+        Medication newMedication = Medication.builder()
+                .name(operation.name())
+                .brand(operation.brand())
+                .activeSubstance(operation.activeSubstance())
+                .indication(operation.indication())
+                .dosage(operation.dosage())
+                .frequency(operation.frequency())
+                .startDate(operation.startDate())
+                .endDate(operation.endDate())
+                .prescribedBy(prescribedBy)
+                .patient(patient)
+                .build();
+
+        repository.save(newMedication);
+    }
+
+    // ✅ NUEVO: Procesar operación REMOVE
+    private void processRemoveOperation(MedicationOperationDTO operation) {
+        // Validar datos para REMOVE
+        if (!operation.isValidForRemove()) {
+            throw new RuntimeException("medicationId es requerido para remover medicamento");
+        }
+
+        // Verificar que el medicamento existe
+        Medication medication = findById(operation.medicationId());
+
+        // Eliminar medicamento
+        repository.delete(medication);
     }
 }
