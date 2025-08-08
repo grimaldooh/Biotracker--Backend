@@ -2,6 +2,7 @@ package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.models.Mutation;
 import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.dto.MedicationAnalysisDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.services.OpenAIService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,7 +32,7 @@ public class OpenAIServiceImpl implements OpenAIService {
     @Value("${openai.model:gpt-4}")
     private String model;
 
-    @Value("${openai.max-tokens:2048}")
+    @Value("${openai.max-tokens:4096}")
     private int maxTokens;
 
     @Value("${openai.temperature:0.3}")
@@ -392,7 +393,167 @@ public class OpenAIServiceImpl implements OpenAIService {
         return prompt.toString();
     }
 
-  
+    @Override
+    public String generateMedicationCompatibilityReport(List<MedicationAnalysisDTO> medications, String clinicalContext) {
+        if (!isConfigured()) {
+            throw new RuntimeException("OpenAI service is not properly configured");
+        }
+
+        try {
+            String prompt = buildMedicationCompatibilityPrompt(medications, clinicalContext);
+            
+           
+            //int medicationAnalysisTokens = 3500;
+            
+            Map<String, Object> requestBody = buildRequestBody(prompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("Content-Type", "application/json");
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            return extractResponseContent(response.getBody());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating medication compatibility report with OpenAI: " + e.getMessage(), e);
+        }
+    }
+
+    // ✅ NUEVO: Método para construir prompt de compatibilidad de medicamentos
+    private String buildMedicationCompatibilityPrompt(List<MedicationAnalysisDTO> medications, String clinicalContext) {
+        StringBuilder prompt = new StringBuilder();
+        
+        prompt.append("You are a clinical pharmacologist and medication safety expert. ");
+        prompt.append("Analyze the following medication regimen for potential drug interactions, contraindications, ");
+        prompt.append("and safety concerns considering the patient's clinical context.\n\n");
+        
+        // Contexto clínico del paciente
+        prompt.append("PATIENT CLINICAL CONTEXT:\n");
+        if (clinicalContext != null && !clinicalContext.trim().isEmpty()) {
+            prompt.append(clinicalContext);
+        } else {
+            prompt.append("No clinical history available - base analysis solely on medication interactions.");
+        }
+        prompt.append("\n\n");
+        
+        // Lista de medicamentos
+        prompt.append("CURRENT MEDICATION REGIMEN:\n");
+        for (int i = 0; i < medications.size(); i++) {
+            MedicationAnalysisDTO med = medications.get(i);
+            prompt.append(String.format("Medication %d:\n", i + 1));
+            prompt.append(String.format("  - Name: %s\n", med.name()));
+            prompt.append(String.format("  - Brand: %s\n", med.brand() != null ? med.brand() : "Generic"));
+            prompt.append(String.format("  - Active Substance: %s\n", med.activeSubstance() != null ? med.activeSubstance() : "Not specified"));
+            prompt.append(String.format("  - Indication: %s\n", med.indication() != null ? med.indication() : "Not specified"));
+            prompt.append(String.format("  - Dosage: %s\n", med.dosage()));
+            prompt.append(String.format("  - Frequency: %s\n", med.frequency()));
+            prompt.append(String.format("  - Start Date: %s\n", med.startDate()));
+            prompt.append(String.format("  - End Date: %s\n", med.endDate() != null ? med.endDate() : "Ongoing"));
+            prompt.append(String.format("  - Status: %s\n", med.isActive() ? "Active" : "Inactive"));
+            prompt.append(String.format("  - Prescribed By: %s\n\n", med.prescribedBy() != null ? med.prescribedBy() : "Not specified"));
+        }
+        
+        prompt.append("ANALYSIS REQUIREMENTS:\n");
+        prompt.append("Provide a comprehensive medication safety analysis in the following JSON structure.\n");
+        prompt.append("Your response MUST be a valid JSON object. Do NOT return plain text, markdown, or any other format.\n\n");
+        
+        prompt.append("EXACT JSON STRUCTURE:\n");
+        prompt.append("{\n");
+        prompt.append("  \"medication_compatibility_report\": {\n");
+        prompt.append("    \"analysis_summary\": {\n");
+        prompt.append("      \"total_medications_analyzed\": ").append(medications.size()).append(",\n");
+        prompt.append("      \"analysis_date\": \"YYYY-MM-DD\",\n");
+        prompt.append("      \"overall_safety_assessment\": \"High Risk/Moderate Risk/Low Risk/Safe\",\n");
+        prompt.append("      \"key_concerns\": \"Brief summary of most critical findings\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"drug_interactions\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"interaction_type\": \"Major/Moderate/Minor\",\n");
+        prompt.append("        \"medications_involved\": [\"List of medication names involved\"],\n");
+        prompt.append("        \"mechanism\": \"How the interaction occurs\",\n");
+        prompt.append("        \"clinical_significance\": \"What this means for the patient\",\n");
+        prompt.append("        \"severity_level\": \"Critical/Serious/Moderate/Minor\",\n");
+        prompt.append("        \"recommendations\": \"Specific actions to take\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"contraindications\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"medication_name\": \"Name of problematic medication\",\n");
+        prompt.append("        \"contraindication_reason\": \"Why this medication is problematic\",\n");
+        prompt.append("        \"clinical_context\": \"Patient condition that creates the contraindication\",\n");
+        prompt.append("        \"risk_level\": \"Absolute/Relative\",\n");
+        prompt.append("        \"alternative_suggestions\": \"Safer medication alternatives if available\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"dosage_concerns\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"medication_name\": \"Name of medication\",\n");
+        prompt.append("        \"concern_type\": \"Overdose Risk/Underdose Risk/Inappropriate Frequency\",\n");
+        prompt.append("        \"current_dosage\": \"Current prescribed dosage\",\n");
+        prompt.append("        \"recommended_dosage\": \"Suggested dosage adjustment\",\n");
+        prompt.append("        \"rationale\": \"Why adjustment is needed\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"clinical_context_analysis\": {\n");
+        prompt.append("      \"medication_appropriateness\": \"How well the medications align with patient conditions\",\n");
+        prompt.append("      \"therapeutic_gaps\": \"Conditions that might need additional treatment\",\n");
+        prompt.append("      \"polypharmacy_assessment\": \"Evaluation of medication burden and potential for simplification\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"monitoring_recommendations\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"parameter\": \"What to monitor (e.g., 'Liver function', 'Blood pressure')\",\n");
+        prompt.append("        \"frequency\": \"How often to monitor\",\n");
+        prompt.append("        \"rationale\": \"Why monitoring is needed\",\n");
+        prompt.append("        \"target_values\": \"What values to aim for\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"immediate_actions\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"priority\": \"Urgent/High/Medium/Low\",\n");
+        prompt.append("        \"action\": \"Specific action to take\",\n");
+        prompt.append("        \"timeframe\": \"When to complete this action\",\n");
+        prompt.append("        \"rationale\": \"Why this action is needed\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"safety_score\": {\n");
+        prompt.append("      \"overall_score\": \"0-100 (100 being safest)\",\n");
+        prompt.append("      \"interaction_risk_score\": \"0-100\",\n");
+        prompt.append("      \"appropriateness_score\": \"0-100\",\n");
+        prompt.append("      \"monitoring_compliance_score\": \"0-100\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"recommendations_summary\": {\n");
+        prompt.append("      \"continue_medications\": [\"Medications that are safe to continue\"],\n");
+        prompt.append("      \"modify_medications\": [\"Medications that need dosage or timing changes\"],\n");
+        prompt.append("      \"discontinue_medications\": [\"Medications that should be stopped\"],\n");
+        prompt.append("      \"add_medications\": [\"Suggested additions for therapeutic gaps\"],\n");
+        prompt.append("      \"specialist_referral_needed\": \"Whether consultation with specialist is recommended\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"disclaimer\": \"This analysis is for educational purposes and should not replace professional medical consultation. All medication changes should be supervised by a healthcare provider.\"\n");
+        prompt.append("  }\n");
+        prompt.append("}\n\n");
+        
+        prompt.append("ANALYSIS GUIDELINES:\n");
+        prompt.append("• Use evidence-based pharmacological principles\n");
+        prompt.append("• Consider drug-drug, drug-disease, and drug-food interactions\n");
+        prompt.append("• Evaluate appropriateness for patient's clinical context\n");
+        prompt.append("• Prioritize patient safety above all other considerations\n");
+        prompt.append("• Provide specific, actionable recommendations\n");
+        prompt.append("• Consider medication adherence and practical aspects\n");
+        prompt.append("• Reference established drug interaction databases when applicable\n\n");
+        
+        prompt.append("Generate the complete medication compatibility analysis using the exact JSON structure above. ");
+        prompt.append("Base your analysis on the provided medications and clinical context.\n");
+        
+        return prompt.toString();
+    }
 
     /**
      * Construye el cuerpo de la petición para OpenAI

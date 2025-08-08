@@ -1,5 +1,6 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.MedicationCompatibilityRequestDTO;
 import com.biotrack.backend.dto.MedicationPatchDTO;
 import com.biotrack.backend.dto.MedicationResponseDTO;
 import com.biotrack.backend.models.Medication;
@@ -151,5 +152,47 @@ public class MedicationController {
             medicationService.patchPatientMedications(patientId, patchDTO);
         
         return ResponseEntity.ok(updatedMedications);
+    }
+
+    @PostMapping("/compatibility-analysis")
+    @Operation(
+        summary = "Analyze medication compatibility",
+        description = "Generate a comprehensive medication compatibility and safety report considering patient's clinical context"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Compatibility report generated successfully",
+            content = @Content(schema = @Schema(implementation = String.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid medication data or validation errors"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Patient not found"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error generating report or OpenAI service unavailable"
+        )
+    })
+    public ResponseEntity<String> analyzeMedicationCompatibility(
+            @Valid @RequestBody MedicationCompatibilityRequestDTO requestDTO) {
+        
+        try {
+            String reportContent = medicationService.generateCompatibilityReport(
+                requestDTO.patientId(), 
+                requestDTO.medications()
+            );
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Content-Type", "application/json")
+                .body(reportContent);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating medication compatibility report: " + e.getMessage(), e);
+        }
     }
 }
