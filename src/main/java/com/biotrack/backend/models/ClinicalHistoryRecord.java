@@ -24,6 +24,9 @@ public class ClinicalHistoryRecord {
     @Column(name = "s3_url", nullable = false)
     private String s3Url;
 
+    @Column(name = "s3_url_patient", nullable = false)
+    private String s3UrlPatient;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }

@@ -4,16 +4,21 @@ import com.biotrack.backend.services.S3Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.stream.Collectors;
 
 @Service
 public class S3ServiceImpl implements S3Service {
@@ -127,6 +132,59 @@ public class S3ServiceImpl implements S3Service {
             return String.format("https://%s.s3.amazonaws.com/%s", bucketName, keyName);
         } catch (Exception e) {
             throw new RuntimeException("Error uploading stream content to S3: " + keyName, e);
+        }
+    }
+
+    @Override
+    public String downloadFileAsString(String s3Url) {
+        try {
+            // Extraer bucket y key de la URL
+            String[] urlParts = extractBucketAndKeyFromUrl(s3Url);
+            String bucketName = urlParts[0];
+            String key = urlParts[1];
+            
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+            
+            ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(getObjectRequest);
+            
+            // Leer el contenido como String
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(s3Object, StandardCharsets.UTF_8))) {
+                return reader.lines().collect(Collectors.joining("\n"));
+            }
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error downloading file from S3: " + e.getMessage(), e);
+        }
+    }
+    
+    // ✅ NUEVO: Método helper para extraer bucket y key de URL
+    private String[] extractBucketAndKeyFromUrl(String s3Url) {
+        try {
+            // Formato esperado: https://bucket-name.s3.amazonaws.com/path/to/file
+            // o https://s3.amazonaws.com/bucket-name/path/to/file
+            
+            if (s3Url.contains(".s3.amazonaws.com/")) {
+                // Formato: https://bucket-name.s3.amazonaws.com/path/to/file
+                String[] parts = s3Url.split("\\.s3\\.amazonaws\\.com/", 2);
+                String bucketName = parts[0].substring(parts[0].lastIndexOf("/") + 1);
+                String key = parts[1];
+                return new String[]{bucketName, key};
+            } else if (s3Url.contains("s3.amazonaws.com/")) {
+                // Formato: https://s3.amazonaws.com/bucket-name/path/to/file
+                String[] parts = s3Url.split("s3\\.amazonaws\\.com/", 2);
+                String[] pathParts = parts[1].split("/", 2);
+                String bucketName = pathParts[0];
+                String key = pathParts.length > 1 ? pathParts[1] : "";
+                return new String[]{bucketName, key};
+            } else {
+                throw new IllegalArgumentException("Invalid S3 URL format: " + s3Url);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Could not parse S3 URL: " + s3Url, e);
         }
     }
 

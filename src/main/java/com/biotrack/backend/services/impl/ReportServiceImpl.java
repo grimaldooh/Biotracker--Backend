@@ -1,5 +1,8 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.dto.PatientReportsDTO;
+import com.biotrack.backend.dto.PatientFriendlyReportResponseDTO;
+import com.biotrack.backend.dto.MedicalStudyReportResponseDTO;
 import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.GeneticSample;
@@ -12,12 +15,15 @@ import com.biotrack.backend.models.enums.ReportStatus;
 import com.biotrack.backend.repositories.MutationRepository;
 import com.biotrack.backend.repositories.ReportRepository;
 import com.biotrack.backend.services.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportServiceImpl implements ReportService {
@@ -26,9 +32,10 @@ public class ReportServiceImpl implements ReportService {
     private final MutationRepository mutationRepository;
     private final SampleService sampleService;
     private final OpenAIService openAIService;
-    private final S3Service s3Service;
+    private final S3Service s3Service; // Para descargar contenido de S3
     private final PatientService patientService;
     private final GeneticSampleService geneticSampleService;
+    private final ObjectMapper objectMapper; // Para parsear JSON
 
     public ReportServiceImpl(
             ReportRepository reportRepository,
@@ -37,7 +44,8 @@ public class ReportServiceImpl implements ReportService {
             OpenAIService openAIService,
             S3Service s3Service,
             PatientService patientService,
-            GeneticSampleService geneticSampleService
+            GeneticSampleService geneticSampleService,
+            ObjectMapper objectMapper
     ) {
         this.reportRepository = reportRepository;
         this.mutationRepository = mutationRepository;
@@ -46,6 +54,7 @@ public class ReportServiceImpl implements ReportService {
         this.s3Service = s3Service;
         this.patientService = patientService;
         this.geneticSampleService = geneticSampleService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -326,5 +335,71 @@ public class ReportServiceImpl implements ReportService {
     private String generatePatientReportS3Key(UUID reportId) {
         long timestamp = System.currentTimeMillis();
         return String.format("reports/%d_%s_patient_friendly_report.txt", timestamp, reportId.toString());
+    }
+
+    @Override
+    public List<PatientReportsDTO> getPatientReports(UUID patientId) {
+        // 1. Validar que el paciente existe
+        patientService.findById(patientId);
+        
+        // 2. Obtener todos los reportes del paciente
+        List<Report> reports = reportRepository.findReportsByPatientId(patientId);
+        
+        // 3. Agrupar reportes por sample_id y combinar URLs
+        Map<UUID, PatientReportsDTO> reportsMap = reports.stream()
+            .filter(report -> report.getSample() != null)
+            .collect(Collectors.toMap(
+                report -> report.getSample().getId(),
+                this::mapToPatientReportsDTO,
+                this::mergeReports // Función para combinar reportes del mismo sample
+            ));
+        
+        // 4. Retornar como lista ordenada por ID de muestra
+        return reportsMap.values().stream()
+            .sorted((a, b) -> a.sampleId().compareTo(b.sampleId()))
+            .toList();
+    }
+    
+    private PatientReportsDTO mapToPatientReportsDTO(Report report) {
+        return new PatientReportsDTO(
+            report.getSample().getId(),
+            report.getS3Url(),
+            report.getS3UrlPatient()
+        );
+    }
+    
+    private PatientReportsDTO mergeReports(PatientReportsDTO existing, PatientReportsDTO newReport) {
+        return new PatientReportsDTO(
+            existing.sampleId(),
+            existing.s3Url() != null ? existing.s3Url() : newReport.s3Url(),
+            existing.s3UrlPatient() != null ? existing.s3UrlPatient() : newReport.s3UrlPatient()
+        );
+    }
+
+    @Override
+    public Object getReportFromS3(String s3Url, boolean isPatientFriendly) {
+        try {
+            // 1. Validar URL de S3
+            if (s3Url == null || s3Url.trim().isEmpty()) {
+                throw new IllegalArgumentException("S3 URL cannot be null or empty");
+            }
+            
+            // 2. Descargar contenido del archivo desde S3
+            String reportContent = s3Service.downloadFileAsString(s3Url);
+            
+            if (reportContent == null || reportContent.trim().isEmpty()) {
+                throw new RuntimeException("Report content is empty or could not be downloaded from S3");
+            }
+            
+            // 3. Parsear JSON según el tipo de reporte
+            if (isPatientFriendly) {
+                return objectMapper.readValue(reportContent, PatientFriendlyReportResponseDTO.class);
+            } else {
+                return objectMapper.readValue(reportContent, MedicalStudyReportResponseDTO.class);
+            }
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing report from S3: " + e.getMessage(), e);
+        }
     }
 }

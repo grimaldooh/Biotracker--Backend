@@ -1,5 +1,6 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.PatientReportsDTO;
 import com.biotrack.backend.dto.ReportDTO;
 import com.biotrack.backend.models.Report;
 import com.biotrack.backend.models.enums.ReportStatus;
@@ -8,6 +9,7 @@ import com.biotrack.backend.services.ReportService;
 import com.biotrack.backend.utils.ReportMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -254,5 +256,74 @@ public class ReportController {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+    }
+
+    @GetMapping("/patient/{patientId}")
+    @Operation(
+        summary = "Get all reports for a patient",
+        description = "Retrieve all reports (normal and patient-friendly) associated with a patient's samples"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of patient reports retrieved successfully",
+            content = @Content(
+                array = @ArraySchema(schema = @Schema(implementation = PatientReportsDTO.class))
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Patient not found with the provided ID"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error"
+        )
+    })
+    public ResponseEntity<List<PatientReportsDTO>> getPatientReports(
+            @Parameter(description = "Unique identifier of the patient")
+            @PathVariable UUID patientId) {
+        
+        List<PatientReportsDTO> reports = reportService.getPatientReports(patientId);
+        return ResponseEntity.ok(reports);
+    }
+
+    @GetMapping("/fetch-from-s3")
+    @Operation(
+        summary = "Fetch and parse report from S3",
+        description = "Download and parse a report from S3 URL, returning structured data based on report type"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Report fetched and parsed successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid S3 URL or report format"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Report not found in S3"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error downloading or parsing report"
+        )
+    })
+    public ResponseEntity<Object> fetchReportFromS3(
+            @Parameter(description = "S3 URL of the report to fetch")
+            @RequestParam String s3Url,
+            @Parameter(description = "Whether this is a patient-friendly report")
+            @RequestParam boolean isPatientFriendly) {
+        
+        try {
+            Object reportData = reportService.getReportFromS3(s3Url, isPatientFriendly);
+            return ResponseEntity.ok(reportData);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid request parameters: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching report from S3: " + e.getMessage(), e);
+        }
     }
 }

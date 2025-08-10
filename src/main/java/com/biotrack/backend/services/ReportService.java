@@ -1,5 +1,8 @@
 package com.biotrack.backend.services;
 
+import com.biotrack.backend.dto.PatientReportsDTO;
+import com.biotrack.backend.dto.PatientFriendlyReportResponseDTO;
+import com.biotrack.backend.dto.MedicalStudyReportResponseDTO;
 import com.biotrack.backend.models.Report;
 import com.biotrack.backend.models.enums.ReportStatus;
 
@@ -17,4 +20,6 @@ public interface ReportService {
     Report getLatestCompletedReport(UUID sampleId);
     List<Report> findAll();
     Report generateClinicalReport(UUID sampleId);
+    List<PatientReportsDTO> getPatientReports(UUID patientId);
+    Object getReportFromS3(String s3Url, boolean isPatientFriendly);
 }
