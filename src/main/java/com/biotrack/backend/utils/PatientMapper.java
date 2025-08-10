@@ -42,7 +42,8 @@ public class PatientMapper {
                 patient.getBirthDate(),
                 patient.getGender(),
                 patient.getEmail(),
-                patient.getPhoneNumber()
+                patient.getPhoneNumber(),
+                patient.getCreatedAt().toString()
         );
     }
 

@@ -118,6 +118,11 @@ public class HospitalServiceImpl implements HospitalService {
         return sampleRepository.findByPatientIdIn(patientIds);
     }
 
+    @Override
+    public List<Patient> searchPatients(UUID hospitalId, String query) {
+        return patientRepository.searchPatientsByHospitalAndQuery(hospitalId, query);
+    }
+
     private boolean isEmailRegistered(String email) {
         return userRepository.findByEmail(email).isPresent() || patientRepository.findByEmail(email).isPresent();
     }

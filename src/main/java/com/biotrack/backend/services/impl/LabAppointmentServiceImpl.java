@@ -31,8 +31,13 @@ public class LabAppointmentServiceImpl implements LabAppointmentService {
 
     @Override
     public LabAppointmentDTO create(LabAppointmentCreationDTO dto) {
-        User doctor = userRepository.findById(dto.doctorId()).orElseThrow(() -> new RuntimeException("Doctor not found"));
-        Patient patient = patientRepository.findById(dto.patientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
+        User doctor = null;
+        if (dto.doctorId() != null) {
+            doctor = userRepository.findById(dto.doctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        }
+        Patient patient = patientRepository.findById(dto.patientId())
+            .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         LabAppointment appointment = LabAppointment.builder()
                 .doctor(doctor)
@@ -48,7 +53,7 @@ public class LabAppointmentServiceImpl implements LabAppointmentService {
         return new LabAppointmentDTO(
                 appointment.getId(),
                 appointment.getMedicalEntityId(),
-                doctor.getId(),
+                doctor != null ? doctor.getId() : null,
                 patient.getId(),
                 appointment.getCreatedAt(),
                 appointment.getStatus(),

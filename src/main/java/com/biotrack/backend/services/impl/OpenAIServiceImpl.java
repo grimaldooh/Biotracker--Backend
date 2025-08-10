@@ -457,7 +457,6 @@ public class OpenAIServiceImpl implements OpenAIService {
             prompt.append(String.format("  - Frequency: %s\n", med.frequency()));
             prompt.append(String.format("  - Start Date: %s\n", med.startDate()));
             prompt.append(String.format("  - End Date: %s\n", med.endDate() != null ? med.endDate() : "Ongoing"));
-            prompt.append(String.format("  - Status: %s\n", med.isActive() ? "Active" : "Inactive"));
             prompt.append(String.format("  - Prescribed By: %s\n\n", med.prescribedBy() != null ? med.prescribedBy() : "Not specified"));
         }
         

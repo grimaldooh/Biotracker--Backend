@@ -17,5 +17,6 @@ public interface HospitalService {
     Patient registerPatient(UUID hospitalId, Patient patient);
     List<Patient> getActivePatientsByHospitalId(UUID hospitalId);
     List<Sample> getSamplesByHospitalId(UUID hospitalId);
+    List<Patient> searchPatients(UUID hospitalId, String query);
     // Agrega métodos para las funciones avanzadas
 }

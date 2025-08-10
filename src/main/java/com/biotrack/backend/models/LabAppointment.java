@@ -22,8 +22,8 @@ public class LabAppointment {
 
     private UUID medicalEntityId; // ID de la entidad médica que solicita la cita
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(optional = true) // Cambia a true
+    @JoinColumn(name = "user_id", nullable = true) // Permite null en la columna
     private User doctor;
 
     @ManyToOne(optional = false)

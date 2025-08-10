@@ -163,4 +163,28 @@ public class HospitalController {
         return ResponseEntity.ok(dtos);
     }
 
+    @GetMapping("/{hospitalId}/patients/search")
+    @Operation(
+        summary = "Search patients in a hospital",
+        description = "Search patients by name, email, or CURP in the specified hospital"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of matching patients",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = PatientDTO.class)))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Hospital not found with the provided ID"
+        )
+    })
+    public ResponseEntity<List<PatientDTO>> searchPatients(
+            @PathVariable UUID hospitalId,
+            @RequestParam("query") String query) {
+        List<Patient> patients = service.searchPatients(hospitalId, query);
+        List<PatientDTO> dtos = patients.stream().map(PatientMapper::toDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
 }

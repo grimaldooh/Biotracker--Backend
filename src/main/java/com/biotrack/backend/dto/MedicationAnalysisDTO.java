@@ -24,8 +24,6 @@ public record MedicationAnalysisDTO(
         @NotBlank
         String prescribedById,
         
-        String prescribedBy,
+        String prescribedBy
         
-        @NotNull
-        Boolean isActive
-) {}
+    ) {}
