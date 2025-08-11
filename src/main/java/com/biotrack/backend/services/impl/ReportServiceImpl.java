@@ -1,8 +1,11 @@
 package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.dto.PatientReportsDTO;
+import com.biotrack.backend.dto.TechnicalGeneticReportDTO;
 import com.biotrack.backend.dto.PatientFriendlyReportResponseDTO;
 import com.biotrack.backend.dto.MedicalStudyReportResponseDTO;
+import com.biotrack.backend.dto.PatientFriendlyGeneticReportDTO;
+import com.biotrack.backend.dto.GeneticReportDTO;
 import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.DnaSample;
 import com.biotrack.backend.models.GeneticSample;
@@ -97,24 +100,33 @@ public class ReportServiceImpl implements ReportService {
         report = reportRepository.save(report);
 
         try {
-            // 5. Construir información del paciente si no se proporciona
+            // 5. Construir información del paciente y contexto clínico
             String patientContext = buildPatientContext(sample);
             String patientClinicalSummary = patientService.getLatestSummaryText(sample.getPatient().getId());
-            ///
-            // 6. Generar reporte con OpenAI
-            String reportContent = openAIService.generateGeneticReport(mutations, patientClinicalSummary);
+            
+            // 6. Generar AMBOS reportes con OpenAI
+            // Reporte técnico genético
+            String technicalReportContent = openAIService.generateGeneticReport(mutations, patientClinicalSummary);
+            
+            // Reporte genético patient-friendly
+            String patientFriendlyReportContent = openAIService.generatePatientFriendlyGeneticReport(mutations, patientClinicalSummary, technicalReportContent);
 
-            // 7. Subir reporte a S3
-            String s3Key = generateReportS3Key(report.getId());
-            String s3Url = s3Service.uploadTextContent(reportContent, s3Key);
+            // 7. Subir AMBOS reportes a S3
+            String technicalS3Key = generateReportS3Key(report.getId());
+            String patientFriendlyS3Key = generatePatientGeneticReportS3Key(report.getId());
+            
+            String technicalS3Url = s3Service.uploadTextContent(technicalReportContent, technicalS3Key);
+            String patientFriendlyS3Url = s3Service.uploadTextContent(patientFriendlyReportContent, patientFriendlyS3Key);
 
             // 8. Calcular tiempo de procesamiento
             long processingTime = System.currentTimeMillis() - startTime;
 
-            // 9. Actualizar reporte con datos finales
-            report.setS3Key(s3Key);
-            report.setS3Url(s3Url);
-            report.setFileSize((long) reportContent.getBytes().length);
+            // 9. Actualizar reporte con AMBOS archivos
+            report.setS3Key(technicalS3Key);
+            report.setS3Url(technicalS3Url);
+            report.setS3KeyPatient(patientFriendlyS3Key);
+            report.setS3UrlPatient(patientFriendlyS3Url);
+            report.setFileSize((long) technicalReportContent.getBytes().length);
             report.setProcessingTimeMs(processingTime);
             report.setStatus(ReportStatus.COMPLETED);
 
@@ -337,6 +349,12 @@ public class ReportServiceImpl implements ReportService {
         return String.format("reports/%d_%s_patient_friendly_report.txt", timestamp, reportId.toString());
     }
 
+    // ✅ NUEVO: Método para generar clave S3 para reporte genético patient-friendly
+    private String generatePatientGeneticReportS3Key(UUID reportId) {
+        long timestamp = System.currentTimeMillis();
+        return String.format("reports/%d_%s_genetic_patient_friendly.json", timestamp, reportId.toString());
+    }
+
     @Override
     public List<PatientReportsDTO> getPatientReports(UUID patientId) {
         // 1. Validar que el paciente existe
@@ -400,6 +418,66 @@ public class ReportServiceImpl implements ReportService {
             
         } catch (Exception e) {
             throw new RuntimeException("Error processing report from S3: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<GeneticReportDTO> getGeneticReportsByPatient(UUID patientId) {
+        return reportRepository.findGeneticReportsByPatientId(patientId)
+            .stream()
+            .map(r -> new GeneticReportDTO(
+                r.getId(),
+                r.getGeneticSample() == null ? null : new GeneticReportDTO.GeneticSampleInfo(
+                    r.getGeneticSample().getId(),
+                    r.getGeneticSample().getType(),
+                    r.getGeneticSample().getStatus(),
+                    r.getGeneticSample().getMedicalEntityId(),
+                    r.getGeneticSample().getCollectionDate(),
+                    r.getGeneticSample().getNotes(),
+                    r.getGeneticSample().getCreatedAt(),
+                    r.getGeneticSample().getConfidenceScore(),
+                    r.getGeneticSample().getProcessingSoftware(),
+                    r.getGeneticSample().getReferenceGenome()
+                ),
+                r.getSample() == null ? null : new GeneticReportDTO.SampleInfo(
+                    r.getSample().getId(),
+                    r.getSample().getType(),
+                    r.getSample().getStatus(),
+                    r.getSample().getMedicalEntityId(),
+                    r.getSample().getCollectionDate(),
+                    r.getSample().getNotes(),
+                    r.getSample().getCreatedAt()
+                ),
+                r.getS3Url(),
+                r.getS3UrlPatient()
+            ))
+            .toList();
+    }
+
+    @Override
+    public Object getGeneticReportFromUrl(String s3Url, boolean isPatientFriendly) {
+        try {
+            // 1. Validar URL de S3
+            if (s3Url == null || s3Url.trim().isEmpty()) {
+                throw new IllegalArgumentException("S3 URL cannot be null or empty");
+            }
+            
+            // 2. Descargar contenido del archivo desde S3
+            String reportContent = s3Service.downloadFileAsStringNotFormated(s3Url);
+            
+            if (reportContent == null || reportContent.trim().isEmpty()) {
+                throw new RuntimeException("Report content is empty or could not be downloaded from S3");
+            }
+            
+            // 3. Parsear JSON según el tipo de reporte
+            if (isPatientFriendly) {
+                return objectMapper.readValue(reportContent, PatientFriendlyGeneticReportDTO.class);
+            } else {
+                return objectMapper.readValue(reportContent, TechnicalGeneticReportDTO.class);
+            }
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing genetic report from S3: " + e.getMessage(), e);
         }
     }
 }

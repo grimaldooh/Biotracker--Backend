@@ -8,6 +8,9 @@ import com.biotrack.backend.models.enums.ReportStatus;
 
 import java.util.List;
 import java.util.UUID;
+import com.biotrack.backend.dto.GeneticReportDTO;
+import com.biotrack.backend.dto.PatientFriendlyGeneticReportDTO;
+import com.biotrack.backend.dto.TechnicalGeneticReportDTO;
 
 public interface ReportService {
     Report generateReport(UUID sampleId);
@@ -22,4 +25,6 @@ public interface ReportService {
     Report generateClinicalReport(UUID sampleId);
     List<PatientReportsDTO> getPatientReports(UUID patientId);
     Object getReportFromS3(String s3Url, boolean isPatientFriendly);
+    List<GeneticReportDTO> getGeneticReportsByPatient(UUID patientId);
+    Object getGeneticReportFromUrl(String s3Url, boolean isPatientFriendly);
 }

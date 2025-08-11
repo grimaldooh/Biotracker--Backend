@@ -18,6 +18,7 @@ public class ClinicalHistoryRecordDTO {
     private UUID id;
     private UUID patientId;
     private String s3Url;
+    private String s3UrlPatient;
     private LocalDateTime createdAt;
 
     // Getters y setters

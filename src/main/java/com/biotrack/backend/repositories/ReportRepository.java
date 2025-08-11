@@ -44,4 +44,18 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
         ORDER BY r.generatedAt DESC
     """)
     List<Report> findReportsBySampleId(@Param("sampleId") UUID sampleId);
+    
+    @Query("""
+        SELECT r FROM Report r
+        WHERE r.geneticSample.patient.id = :patientId
+    """)
+    List<Report> findGeneticReportsByPatientId(@Param("patientId") UUID patientId);
+
+    /**
+     * Busca un reporte por ID de muestra genética
+     * @param geneticSampleId ID de la muestra genética
+     * @return Optional con el reporte encontrado
+     */
+    @Query("SELECT r FROM Report r WHERE r.geneticSample.id = :geneticSampleId")
+    Optional<Report> findByGeneticSampleId(@Param("geneticSampleId") UUID geneticSampleId);
 }

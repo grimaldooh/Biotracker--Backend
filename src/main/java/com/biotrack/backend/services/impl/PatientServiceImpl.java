@@ -105,25 +105,31 @@ public class PatientServiceImpl implements PatientService {
     List<Report> reports = reportRepository.findByPatientIdOrderByGeneratedAtDesc(patientId)
                                            .stream().limit(5).toList();
 
-    // 3. Descargar contenido de reportes desde S3
-    List<String> reportContents = reports.stream()
-        .map(r -> s3Service.downloadTextContent(r.getS3Key()))
-        .toList();
+    // 3. Construir prompt para OpenAI - REPORTE TÉCNICO
+    String technicalPrompt = buildClinicalHistoryPrompt(patient, visits, reports);
 
-    // 4. Construir prompt para OpenAI
-    String prompt = buildClinicalHistoryPrompt(patient, visits, reports);
+    // 4. Generar resumen técnico con OpenAI
+    String technicalSummary = openAIService.generateClinicalHistorySummary(technicalPrompt);
 
-    // 5. Generar resumen con OpenAI
-    String summary = openAIService.generateClinicalHistorySummary(prompt);
+    // 5. Construir prompt para OpenAI - REPORTE PATIENT-FRIENDLY
+    String patientFriendlyPrompt = buildPatientFriendlyClinicalPrompt(patient, visits, reports, technicalSummary);
 
-    // 6. Subir resumen a S3
-    String s3Key = generateClinicalHistoryS3Key(patientId);
-    String s3Url = s3Service.uploadTextContent(summary, s3Key);
+    // 6. Generar resumen patient-friendly con OpenAI
+    String patientFriendlySummary = openAIService.generateClinicalHistorySummary(patientFriendlyPrompt);
 
-    // 7. Guardar registro en ClinicalHistoryRecord
+    // 7. Subir resumen técnico a S3
+    String technicalS3Key = generateClinicalHistoryS3Key(patientId, false);
+    String technicalS3Url = s3Service.uploadTextContent(technicalSummary, technicalS3Key);
+
+    // 8. Subir resumen patient-friendly a S3
+    String patientFriendlyS3Key = generateClinicalHistoryS3Key(patientId, true);
+    String patientFriendlyS3Url = s3Service.uploadTextContent(patientFriendlySummary, patientFriendlyS3Key);
+
+    // 9. Guardar registro en ClinicalHistoryRecord con ambas URLs
     ClinicalHistoryRecord record = ClinicalHistoryRecord.builder()
         .patient(patient)
-        .s3Url(s3Url)
+        .s3Url(technicalS3Url)           // URL del reporte técnico
+        .s3UrlPatient(patientFriendlyS3Url)  // URL del reporte patient-friendly
         .createdAt(LocalDateTime.now())
         .build();
 
@@ -275,9 +281,147 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
     return prompt.toString();
 }
 
-private String generateClinicalHistoryS3Key(UUID patientId) {
+private String buildPatientFriendlyClinicalPrompt(Patient patient, List<MedicalVisit> visits, List<Report> reports, String technicalSummary) {
+    StringBuilder prompt = new StringBuilder();
+    
+    prompt.append("You are a compassionate medical communicator specializing in patient education. ");
+    prompt.append("Your task is to create a patient-friendly clinical summary based on the technical medical summary provided. ");
+    prompt.append("This summary should be easily understood by patients and their families, using simple language while maintaining medical accuracy.\n\n");
+    
+    prompt.append("IMPORTANT: Your response MUST be a valid JSON object with the following structure. DO NOT return plain text, markdown, or any other format. Only return the JSON object.\n\n");
+    
+    prompt.append("EXACT JSON STRUCTURE:\n");
+    prompt.append("{\n");
+    prompt.append("  \"resumen_clinico_paciente\": {\n");
+    prompt.append("    \"informacion_paciente\": {\n");
+    prompt.append("      \"nombre\": \"").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append("\",\n");
+    prompt.append("      \"fecha_nacimiento\": \"").append(patient.getBirthDate()).append("\",\n");
+    prompt.append("      \"edad_aproximada\": \"Calcular edad basada en fecha de nacimiento\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"resumen_de_tu_salud\": {\n");
+    prompt.append("      \"mensaje_principal\": \"Mensaje principal sobre el estado general de salud del paciente en términos simples\",\n");
+    prompt.append("      \"que_se_analizo\": \"Explicación simple de qué estudios y análisis se realizaron\",\n");
+    prompt.append("      \"periodo_analizado\": \"Descripción del tiempo que cubren estos estudios\",\n");
+    prompt.append("      \"hallazgos_importantes\": \"Los hallazgos más relevantes explicados de manera comprensible\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"tu_historial_medico\": {\n");
+    prompt.append("      \"visitas_recientes\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"fecha\": \"YYYY-MM-DD\",\n");
+    prompt.append("          \"motivo_consulta\": \"Por qué fuiste al doctor en términos simples\",\n");
+    prompt.append("          \"que_encontraron\": \"Qué descubrió el doctor durante esa visita\",\n");
+    prompt.append("          \"recomendaciones_principales\": \"Las recomendaciones más importantes que te dieron\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"progreso_de_tu_salud\": \"Cómo ha cambiado tu salud a lo largo del tiempo según las visitas\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"resultados_de_estudios\": {\n");
+    prompt.append("      \"estudios_realizados\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"fecha_estudio\": \"YYYY-MM-DD\",\n");
+    prompt.append("          \"tipo_estudio\": \"Tipo de estudio en términos simples (ej: análisis de sangre, estudio genético)\",\n");
+    prompt.append("          \"que_midieron\": \"Qué aspectos de tu salud se analizaron\",\n");
+    prompt.append("          \"resultados_principales\": \"Los resultados más importantes explicados de forma comprensible\",\n");
+    prompt.append("          \"que_significa_para_ti\": \"Qué significan estos resultados para tu salud\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"tendencias_importantes\": \"Patrones o cambios importantes que se observaron en tus estudios\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"condiciones_identificadas\": {\n");
+    prompt.append("      \"condiciones_actuales\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"nombre_condicion\": \"Nombre de la condición en términos comprensibles\",\n");
+    prompt.append("          \"que_significa\": \"Explicación simple de qué es esta condición\",\n");
+    prompt.append("          \"como_te_afecta\": \"Cómo puede afectar tu día a día\",\n");
+    prompt.append("          \"evidencia_que_lo_respalda\": \"Qué estudios o síntomas apoyan este diagnóstico\",\n");
+    prompt.append("          \"nivel_preocupacion\": \"Bajo/Moderado/Alto - qué tan preocupante es esto\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"areas_de_atencion\": \"Aspectos de tu salud que requieren seguimiento pero no son diagnósticos definitivos\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"plan_de_cuidados\": {\n");
+    prompt.append("      \"acciones_inmediatas\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"accion\": \"Qué necesitas hacer pronto\",\n");
+    prompt.append("          \"por_que_es_importante\": \"Por qué es necesario hacer esto\",\n");
+    prompt.append("          \"cuando_hacerlo\": \"Cuándo debes completar esta acción\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"cambios_estilo_vida\": [\n");
+    prompt.append("        {\n");
+    prompt.append("          \"recomendacion\": \"Cambio específico recomendado\",\n");
+    prompt.append("          \"beneficio_esperado\": \"Cómo te ayudará este cambio\",\n");
+    prompt.append("          \"facilidad_implementacion\": \"Fácil/Moderado/Desafiante\"\n");
+    prompt.append("        }\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"seguimiento_medico\": \"Con qué frecuencia debes ver a tu doctor y qué tipo de citas necesitas\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"preguntas_para_tu_doctor\": {\n");
+    prompt.append("      \"preguntas_sugeridas\": [\n");
+    prompt.append("        \"Pregunta importante que podrías hacerle a tu doctor\",\n");
+    prompt.append("        \"Otra pregunta relevante sobre tu salud\"\n");
+    prompt.append("      ],\n");
+    prompt.append("      \"temas_a_discutir\": \"Temas importantes que deberías comentar en tu próxima cita\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"apoyo_y_recursos\": {\n");
+    prompt.append("      \"mensaje_de_apoyo\": \"Mensaje positivo y de apoyo para el paciente\",\n");
+    prompt.append("      \"proximos_pasos\": \"Los siguientes pasos más importantes en tu cuidado médico\",\n");
+    prompt.append("      \"cuando_buscar_ayuda\": \"Señales de alarma o síntomas que requieren atención médica inmediata\"\n");
+    prompt.append("    },\n");
+    prompt.append("    \"notas_importantes\": {\n");
+    prompt.append("      \"limitaciones\": \"Qué no cubre este resumen y qué otras evaluaciones podrían ser necesarias\",\n");
+    prompt.append("      \"actualizacion\": \"Cuándo se debería actualizar este resumen\",\n");
+    prompt.append("      \"confidencialidad\": \"Recordatorio sobre la privacidad de la información médica\"\n");
+    prompt.append("    }\n");
+    prompt.append("  }\n");
+    prompt.append("}\n\n");
+    
+    prompt.append("COMMUNICATION GUIDELINES:\n");
+    prompt.append("• Use simple, everyday language that a person without medical training can understand\n");
+    prompt.append("• Avoid medical jargon; when medical terms are necessary, explain them clearly\n");
+    prompt.append("• Be compassionate and supportive in tone\n");
+    prompt.append("• Focus on actionable information the patient can use\n");
+    prompt.append("• Be honest about findings while being encouraging when appropriate\n");
+    prompt.append("• Emphasize the importance of working with their healthcare team\n");
+    prompt.append("• Use positive framing when possible without minimizing real concerns\n");
+    prompt.append("• Make complex medical relationships understandable through analogies or simple explanations\n\n");
+    
+    prompt.append("PATIENT CONTEXT:\n");
+    prompt.append("This summary is for ").append(patient.getFirstName()).append(" ").append(patient.getLastName()).append(", ");
+    prompt.append("born on ").append(patient.getBirthDate()).append(".\n\n");
+    
+    prompt.append("TECHNICAL MEDICAL SUMMARY (to be translated into patient-friendly language):\n");
+    prompt.append(technicalSummary).append("\n\n");
+    
+    prompt.append("MEDICAL VISITS CONTEXT:\n");
+    for (MedicalVisit visit : visits) {
+        prompt.append("Visit Date: ").append(visit.getVisitDate()).append("\n");
+        prompt.append("Diagnosis: ").append(visit.getDiagnosis()).append("\n");
+        prompt.append("Recommendations: ").append(visit.getRecommendations()).append("\n");
+        prompt.append("Notes: ").append(visit.getNotes()).append("\n\n");
+    }
+    
+    prompt.append("STUDY REPORTS CONTEXT:\n");
+    for (Report report : reports) {
+        var sample = report.getSample();
+        prompt.append("Study Date: ").append(sample.getCollectionDate()).append("\n");
+        prompt.append("Sample Type: ").append(sample.getType()).append("\n");
+        
+        String content = s3Service.downloadTextContent(report.getS3Key());
+        prompt.append("Study Findings: ").append(content).append("\n\n");
+    }
+    
+    prompt.append("Generate the patient-friendly clinical summary using the EXACT JSON structure provided above. ");
+    prompt.append("Transform the technical information into language that empowers the patient to understand ");
+    prompt.append("and participate actively in their healthcare journey.\n");
+    
+    return prompt.toString();
+}
+
+private String generateClinicalHistoryS3Key(UUID patientId, boolean isPatientFriendly) {
     long timestamp = System.currentTimeMillis();
-    return String.format("clinical-history/%d_%s_summary.txt", timestamp, patientId.toString());
+    String suffix = isPatientFriendly ? "patient_friendly_summary" : "technical_summary";
+    return String.format("clinical-history/%d_%s_%s.json", timestamp, patientId.toString(), suffix);
 }
 
 @Override
@@ -301,6 +445,23 @@ public String getLatestSummaryText(UUID patientId) {
     }
     // Extrae la key de S3 desde la URL
     String s3Url = record.getS3Url();
+    String bucketPattern = ".s3.amazonaws.com/";
+    int keyStartIndex = s3Url.indexOf(bucketPattern);
+    if (keyStartIndex == -1) {
+        throw new IllegalArgumentException("Invalid S3 URL format: " + s3Url);
+    }
+    String s3Key = s3Url.substring(keyStartIndex + bucketPattern.length());
+    return s3Service.downloadTextContent(s3Key);
+}
+
+@Override
+public String getLatestSummaryTextPatientFriendly(UUID patientId) {
+    ClinicalHistoryRecord record = getLatestRecord(patientId);
+    if (record == null || record.getS3UrlPatient() == null) {
+        throw new RuntimeException("No summary file found for this patient");
+    }
+    // Extrae la key de S3 desde la URL
+    String s3Url = record.getS3UrlPatient();
     String bucketPattern = ".s3.amazonaws.com/";
     int keyStartIndex = s3Url.indexOf(bucketPattern);
     if (keyStartIndex == -1) {

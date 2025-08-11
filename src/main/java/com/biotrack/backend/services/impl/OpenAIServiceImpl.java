@@ -236,9 +236,9 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("Now, using the real patient data, medical history, and genetic variant information provided above, generate the genetic analysis report in the EXACT JSON structure. ");
         prompt.append("Pay special attention to correlating the genetic findings with the patient's documented medical timeline and laboratory abnormalities. ");
         prompt.append("REMEMBER: Always include specific sample IDs (idMuestra) when referencing laboratory findings to maintain full traceability of medical correlations.\n");
-        
+
         // Verificar longitud aproximada (4 caracteres ≈ 1 token)
-        if (prompt.length() > 18000) { // Ajustado para la nueva estructura
+        if (prompt.length() > 30000) { // Ajustado para la nueva estructura
             throw new RuntimeException("Prompt too long. Consider reducing mutation count or patient info.");
         }
         
@@ -654,5 +654,172 @@ public class OpenAIServiceImpl implements OpenAIService {
         } catch (Exception e) {
             throw new RuntimeException("Error generating patient-friendly clinical report with OpenAI: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String generatePatientFriendlyGeneticReport(List<Mutation> mutations, String clinicalContext, String technicalReport) {
+        if (!isConfigured()) {
+            throw new RuntimeException("OpenAI service is not properly configured");
+        }
+
+        try {
+            String prompt = buildPatientFriendlyGeneticPrompt(mutations, clinicalContext, technicalReport);
+            Map<String, Object> requestBody = buildRequestBody(prompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("Content-Type", "application/json");
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            return extractResponseContent(response.getBody());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating patient-friendly genetic report with OpenAI: " + e.getMessage(), e);
+        }
+    }
+
+    // ✅ NUEVO: Método para construir prompt genético patient-friendly
+    private String buildPatientFriendlyGeneticPrompt(List<Mutation> mutations, String clinicalContext, String technicalReport) {
+        StringBuilder prompt = new StringBuilder();
+        
+        prompt.append("You are a genetic counselor and patient education specialist with expertise in translating complex genetic information ");
+        prompt.append("into understandable language for patients and their families. Your role is to take technical genetic analysis ");
+        prompt.append("and make it accessible, supportive, and actionable for patients.\n\n");
+        
+        prompt.append("IMPORTANT: Your response MUST be a valid JSON object with the following structure. DO NOT return plain text, markdown, or any other format. Only return the JSON object.\n\n");
+        
+        prompt.append("TECHNICAL GENETIC REPORT (for reference):\n");
+        prompt.append(technicalReport).append("\n\n");
+        
+        prompt.append("PATIENT CLINICAL CONTEXT:\n");
+        prompt.append(clinicalContext != null ? clinicalContext : "No clinical context available");
+        prompt.append("\n\n");
+        
+        prompt.append("GENETIC VARIANTS IDENTIFIED:\n");
+        for (int i = 0; i < mutations.size(); i++) {
+            Mutation mutation = mutations.get(i);
+            prompt.append(String.format("Variant %d:\n", i + 1));
+            prompt.append(String.format("  • Gene: %s\n", mutation.getGene()));
+            prompt.append(String.format("  • Chromosome: %s\n", mutation.getChromosome()));
+            prompt.append(String.format("  • Type: %s\n", mutation.getType()));
+            prompt.append(String.format("  • Clinical Relevance: %s\n", mutation.getRelevance()));
+            prompt.append(String.format("  • Notes: %s\n\n", mutation.getComment()));
+        }
+        
+        prompt.append("EXACT JSON STRUCTURE:\n");
+        prompt.append("{\n");
+        prompt.append("  \"your_genetic_report\": {\n");
+        prompt.append("    \"understanding_your_test\": {\n");
+        prompt.append("      \"what_we_analyzed\": \"Simple explanation of what genetic testing was done\",\n");
+        prompt.append("      \"test_date\": \"YYYY-MM-DD\",\n");
+        prompt.append("      \"total_variants_found\": ").append(mutations.size()).append(",\n");
+        prompt.append("      \"main_message\": \"One or two sentences summarizing the most important findings in simple terms\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"your_genetic_findings\": {\n");
+        prompt.append("      \"overall_picture\": \"What your genetic results mean for your health in everyday language\",\n");
+        prompt.append("      \"risk_level\": \"Low/Moderate/High - overall genetic risk assessment\",\n");
+        prompt.append("      \"what_this_means_for_you\": \"Practical explanation of how these genetic findings might affect your life\",\n");
+        prompt.append("      \"comparison_to_others\": \"How your genetic profile compares to the general population\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"your_specific_variants\": [\n");
+        prompt.append("      {\n");
+        prompt.append("        \"gene_name\": \"Name of the gene in simple terms\",\n");
+        prompt.append("        \"what_this_gene_does\": \"Simple explanation of what this gene is responsible for in your body\",\n");
+        prompt.append("        \"your_variant\": \"Description of the change found in your DNA\",\n");
+        prompt.append("        \"what_it_means\": \"How this variant might affect your health in understandable terms\",\n");
+        prompt.append("        \"how_common_is_it\": \"How frequently this variant is found in people\",\n");
+        prompt.append("        \"inheritance_info\": \"Simple explanation of how you got this variant (from parents, etc.)\",\n");
+        prompt.append("        \"concern_level\": \"Low/Medium/High - how concerning this variant is\",\n");
+        prompt.append("        \"action_needed\": \"What, if anything, you should do about this finding\"\n");
+        prompt.append("      }\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"health_implications\": {\n");
+        prompt.append("      \"immediate_concerns\": \"Any health issues you should be aware of right now\",\n");
+        prompt.append("      \"long_term_outlook\": \"What these findings might mean for your future health\",\n");
+        prompt.append("      \"lifestyle_impact\": \"How these results might affect your daily life, if at all\",\n");
+        prompt.append("      \"preventive_opportunities\": \"Things you can do to reduce any genetic risks\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"family_considerations\": {\n");
+        prompt.append("      \"family_risk\": \"What these results might mean for your family members\",\n");
+        prompt.append("      \"inheritance_pattern\": \"Simple explanation of how these genetic traits are passed down\",\n");
+        prompt.append("      \"family_testing_recommendations\": \"Whether family members should consider genetic testing\",\n");
+        prompt.append("      \"children_considerations\": \"What this means if you have or plan to have children\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"your_action_plan\": {\n");
+        prompt.append("      \"immediate_steps\": [\n");
+        prompt.append("        {\n");
+        prompt.append("          \"action\": \"Specific action you should take\",\n");
+        prompt.append("          \"why_important\": \"Why this action matters for your health\",\n");
+        prompt.append("          \"timeline\": \"When you should complete this\"\n");
+        prompt.append("        }\n");
+        prompt.append("      ],\n");
+        prompt.append("      \"lifestyle_recommendations\": [\n");
+        prompt.append("        {\n");
+        prompt.append("          \"category\": \"Diet/Exercise/Environment/etc.\",\n");
+        prompt.append("          \"recommendation\": \"Specific suggestion tailored to your genetic profile\",\n");
+        prompt.append("          \"benefit\": \"How this will help given your genetic findings\"\n");
+        prompt.append("        }\n");
+        prompt.append("      ],\n");
+        prompt.append("      \"medical_monitoring\": {\n");
+        prompt.append("        \"tests_to_discuss\": [\"Medical tests you should ask your doctor about\"],\n");
+        prompt.append("        \"frequency\": \"How often you should have check-ups related to these findings\",\n");
+        prompt.append("        \"specialists_to_see\": [\"Types of doctors who might help with your genetic profile\"]\n");
+        prompt.append("      }\n");
+        prompt.append("    },\n");
+        prompt.append("    \"understanding_genetics\": {\n");
+        prompt.append("      \"genetics_101\": \"Simple explanation of how genetics work and why variants matter\",\n");
+        prompt.append("      \"why_testing_matters\": \"Benefits of knowing your genetic information\",\n");
+        prompt.append("      \"limitations_to_know\": \"What genetic testing can and cannot tell you\",\n");
+        prompt.append("      \"future_discoveries\": \"How new genetic knowledge might affect your results over time\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"questions_and_support\": {\n");
+        prompt.append("      \"questions_for_doctor\": [\n");
+        prompt.append("        \"Important questions to ask your healthcare provider about these results\"\n");
+        prompt.append("      ],\n");
+        prompt.append("      \"questions_for_genetic_counselor\": [\n");
+        prompt.append("        \"Questions specifically for a genetic counselor\"\n");
+        prompt.append("      ],\n");
+        prompt.append("      \"emotional_support\": \"Guidance on processing these genetic findings emotionally\",\n");
+        prompt.append("      \"resources_to_explore\": [\"Helpful websites, support groups, or educational materials\"]\n");
+        prompt.append("    },\n");
+        prompt.append("    \"important_reminders\": {\n");
+        prompt.append("      \"genetics_is_not_destiny\": \"Reassurance that genetic variants don't guarantee disease\",\n");
+        prompt.append("      \"lifestyle_matters\": \"How your choices can influence genetic risk\",\n");
+        prompt.append("      \"ongoing_relationship\": \"The importance of working with your healthcare team\",\n");
+        prompt.append("      \"privacy_and_discrimination\": \"Information about genetic privacy and anti-discrimination laws\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"next_steps_summary\": {\n");
+        prompt.append("      \"most_important_action\": \"The single most important thing to do next\",\n");
+        prompt.append("      \"timeline_overview\": \"Overview of when to complete various recommended actions\",\n");
+        prompt.append("      \"follow_up_plan\": \"When and why to revisit these genetic findings\"\n");
+        prompt.append("    }\n");
+        prompt.append("  }\n");
+        prompt.append("}\n\n");
+        
+        prompt.append("COMMUNICATION GUIDELINES:\n");
+        prompt.append("• Use language that someone without scientific background can understand\n");
+        prompt.append("• Avoid genetic jargon - when technical terms are necessary, explain them immediately\n");
+        prompt.append("• Be supportive and reassuring while being honest about findings\n");
+        prompt.append("• Emphasize that genetics is just one factor in health\n");
+        prompt.append("• Focus on actionable information and empowerment\n");
+        prompt.append("• Address common fears and misconceptions about genetic testing\n");
+        prompt.append("• Encourage collaboration with healthcare providers\n");
+        prompt.append("• Be culturally sensitive and inclusive in language\n");
+        prompt.append("• Provide hope and emphasize the benefits of genetic knowledge\n\n");
+        
+        prompt.append("Using the technical genetic report and variant information provided above, create a comprehensive ");
+        prompt.append("patient-friendly genetic report in the EXACT JSON structure. Make it educational, supportive, ");
+        prompt.append("and empowering while maintaining scientific accuracy. Transform complex genetic concepts into ");
+        prompt.append("language that helps the patient understand and act on their genetic information.\n");
+        
+        return prompt.toString();
     }
 }

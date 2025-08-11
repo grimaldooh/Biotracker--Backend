@@ -10,7 +10,8 @@ public interface OpenAIService {
     String generateClinicalReport(String patientInfo);
     String generatePatientFriendlyClinicalReport(String patientInfo);
     String generateClinicalHistorySummary(String prompt);
-    
+    String generatePatientFriendlyGeneticReport(List<Mutation> mutations, String clinicalContext, String technicalReport);
+
     String generateMedicationCompatibilityReport(List<MedicationAnalysisDTO> medications, String clinicalContext);
     
     boolean isConfigured();

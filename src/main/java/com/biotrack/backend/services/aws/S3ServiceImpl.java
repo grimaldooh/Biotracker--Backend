@@ -160,6 +160,83 @@ public class S3ServiceImpl implements S3Service {
             throw new RuntimeException("Error downloading file from S3: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public String downloadFileAsStringNotFormated(String s3Url) {
+        try {
+            // Extraer bucket y key de la URL
+            String[] urlParts = extractBucketAndKeyFromUrlNotFormated(s3Url);
+            String bucketName = urlParts[0];
+            String key = urlParts[1];
+            
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+            
+            ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(getObjectRequest);
+            
+            // Leer el contenido como String
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(s3Object, StandardCharsets.UTF_8))) {
+                return reader.lines().collect(Collectors.joining("\n"));
+            }
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error downloading file from S3: " + e.getMessage(), e);
+        }
+    }
+
+    private String[] extractBucketAndKeyFromUrlNotFormated(String s3Url) {
+    try {
+        // Formato esperado: https://biotrack-results-files.s3.amazonaws.com/reports/1754883001169_402b89a1-b97c-4002-abfc-d8540a7db178_genetic_report.txt
+        
+        if (s3Url.contains(".s3.amazonaws.com/")) {
+            // Formato: https://bucket-name.s3.amazonaws.com/path/to/file
+            String[] urlParts = s3Url.split("://", 2); // Separar protocolo
+            if (urlParts.length != 2) {
+                throw new IllegalArgumentException("Invalid URL protocol format");
+            }
+            
+            String withoutProtocol = urlParts[1]; // biotrack-results-files.s3.amazonaws.com/reports/file.txt
+            String[] domainAndPath = withoutProtocol.split("\\.s3\\.amazonaws\\.com/", 2);
+            
+            if (domainAndPath.length != 2) {
+                throw new IllegalArgumentException("Invalid S3 domain format");
+            }
+            
+            String bucketName = domainAndPath[0]; // biotrack-results-files
+            String key = domainAndPath[1]; // reports/1754883001169_402b89a1-b97c-4002-abfc-d8540a7db178_genetic_report.txt
+            
+            return new String[]{bucketName, key};
+            
+        } else if (s3Url.contains("s3.amazonaws.com/")) {
+            // Formato alternativo: https://s3.amazonaws.com/bucket-name/path/to/file
+            String[] parts = s3Url.split("s3\\.amazonaws\\.com/", 2);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid S3 path format");
+            }
+            
+            String pathPart = parts[1]; // bucket-name/path/to/file
+            String[] pathParts = pathPart.split("/", 2);
+            
+            if (pathParts.length < 1) {
+                throw new IllegalArgumentException("Invalid bucket/key format");
+            }
+            
+            String bucketName = pathParts[0];
+            String key = pathParts.length > 1 ? pathParts[1] : "";
+            
+            return new String[]{bucketName, key};
+            
+        } else {
+            throw new IllegalArgumentException("Unsupported S3 URL format. Expected format: https://bucket-name.s3.amazonaws.com/path/to/file");
+        }
+        
+    } catch (Exception e) {
+        throw new IllegalArgumentException("Could not parse S3 URL: " + s3Url + ". Error: " + e.getMessage(), e);
+    }
+}
     
     // ✅ NUEVO: Método helper para extraer bucket y key de URL
     private String[] extractBucketAndKeyFromUrl(String s3Url) {

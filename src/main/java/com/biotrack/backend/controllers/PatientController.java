@@ -192,6 +192,22 @@ public class PatientController {
                 .header("Content-Type", "text/plain; charset=UTF-8")
                 .body(content);
     }
+
+    @GetMapping("/latest/{patientId}/summary-text/patient-friendly")
+    @Operation(
+        summary = "Get latest clinical summary text for a patient",
+        description = "Downloads and returns the latest clinical summary as plain text from S3"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Summary text retrieved successfully"
+    )
+    public ResponseEntity<String> getLatestSummaryTextPatientFriendly(@PathVariable UUID patientId) {
+        String content = patientService.getLatestSummaryTextPatientFriendly(patientId);
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/plain; charset=UTF-8")
+                .body(content);
+    }
     
     // Exception handlers con tipos específicos
     @ExceptionHandler(MethodArgumentNotValidException.class)

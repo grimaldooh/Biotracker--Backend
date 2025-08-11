@@ -1,5 +1,6 @@
 package com.biotrack.backend.controllers;
 
+import com.biotrack.backend.dto.GeneticReportDTO;
 import com.biotrack.backend.dto.PatientReportsDTO;
 import com.biotrack.backend.dto.ReportDTO;
 import com.biotrack.backend.models.Report;
@@ -324,6 +325,50 @@ public class ReportController {
             throw new RuntimeException("Invalid request parameters: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException("Error fetching report from S3: " + e.getMessage(), e);
+        }
+    }
+
+    @GetMapping("/patient/{patientId}/genetic")
+    public List<GeneticReportDTO> getGeneticReportsByPatient(@PathVariable UUID patientId) {
+        return reportService.getGeneticReportsByPatient(patientId);
+    }
+
+    @GetMapping("/genetic-report-from-url")
+    @Operation(
+        summary = "Get genetic report from S3 URL",
+        description = "Fetch and parse a genetic report (technical or patient-friendly) directly from S3 URL"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Genetic report fetched and parsed successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid S3 URL or report format"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Report not found in S3"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error downloading or parsing report from S3"
+        )
+    })
+    public ResponseEntity<Object> getGeneticReportFromUrl(
+            @Parameter(description = "S3 URL of the genetic report to fetch")
+            @RequestParam String s3Url,
+            @Parameter(description = "Whether this is a patient-friendly report (true) or technical report (false)")
+            @RequestParam(defaultValue = "false") boolean isPatientFriendly) {
+        
+        try {
+            Object reportData = reportService.getGeneticReportFromUrl(s3Url, isPatientFriendly);
+            return ResponseEntity.ok(reportData);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid request parameters: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching genetic report from S3: " + e.getMessage(), e);
         }
     }
 }

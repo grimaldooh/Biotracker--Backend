@@ -109,8 +109,15 @@ public class GeneticSampleController {
     }
 
     @GetMapping("/patient/{patientId}")
-    @Operation(summary = "Get genetic samples by patient", description = "Retrieve all genetic samples for a specific patient")
-    public ResponseEntity<List<GeneticSampleDTO>> getByPatientId(@PathVariable UUID patientId) {
+    @Operation(
+        summary = "Get genetic samples by patient ID",
+        description = "Retrieve all genetic samples associated with a specific patient ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Genetic samples found"),
+        @ApiResponse(responseCode = "404", description = "No genetic samples found for this patient")
+    })
+    public ResponseEntity<List<GeneticSampleDTO>> getGeneticSamplesByPatientId(@PathVariable UUID patientId) {
         List<GeneticSample> geneticSamples = geneticSampleService.findByPatientId(patientId);
         List<GeneticSampleDTO> dtos = geneticSamples.stream()
                 .map(GeneticSampleMapper::toDTO)

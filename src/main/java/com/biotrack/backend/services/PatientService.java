@@ -15,5 +15,6 @@ public interface PatientService {
     ClinicalHistoryRecord generatePatientClinicalSummary(UUID patientId);
     ClinicalHistoryRecord getLatestRecord(UUID patientId);
     String getLatestSummaryText(UUID patientId);
+    String getLatestSummaryTextPatientFriendly(UUID patientId);
     List<Patient> searchPatients(String firstName, String lastName);
 }

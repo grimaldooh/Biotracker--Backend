@@ -25,7 +25,8 @@ public abstract class Sample {
 
     @Column(name = "doctor_refered_id", nullable = true)
     protected UUID doctorReferedId;
-@Id
+    
+    @Id
     @GeneratedValue
     protected UUID id;
 
