@@ -1,6 +1,7 @@
 package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.DoctorStatsDTO;
+import com.biotrack.backend.dto.PrimaryHospitalDTO;
 import com.biotrack.backend.dto.UserDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.models.User;
@@ -24,11 +25,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "Users", description = "System user management (doctors, technicians, administrators)")
+@Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
     private final UserService userService;
@@ -199,6 +201,32 @@ public class UserController {
         return ResponseEntity.ok(stats);
     }
 
+    @GetMapping("/{userId}/primary-hospital")
+    @Operation(
+        summary = "Get user's primary hospital",
+        description = "Retrieve basic information of the user's main hospital (first assigned hospital)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Primary hospital found"),
+        @ApiResponse(responseCode = "404", description = "User not found or no hospital assigned"),
+        @ApiResponse(responseCode = "400", description = "Invalid user ID")
+    })
+    public ResponseEntity<PrimaryHospitalDTO> getPrimaryHospital(
+            @Parameter(description = "User ID", required = true)
+            @PathVariable UUID userId) {
+        try {
+            Optional<PrimaryHospitalDTO> primaryHospital = userService.getPrimaryHospital(userId);
+            
+            if (primaryHospital.isPresent()) {
+                return ResponseEntity.ok(primaryHospital.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving primary hospital for user: " + e.getMessage(), e);
+        }
+    }
+    
     // Exception handlers locales para este controlador
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(

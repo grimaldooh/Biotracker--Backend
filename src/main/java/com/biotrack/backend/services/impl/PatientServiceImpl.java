@@ -1,8 +1,10 @@
 package com.biotrack.backend.services.impl;
 
+import com.biotrack.backend.dto.PrimaryHospitalDTO;
 import com.biotrack.backend.models.BloodSample;
 import com.biotrack.backend.models.ClinicalHistoryRecord;
 import com.biotrack.backend.models.DnaSample;
+import com.biotrack.backend.models.Hospital;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.Report;
@@ -21,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
@@ -470,4 +474,25 @@ public String getLatestSummaryTextPatientFriendly(UUID patientId) {
     String s3Key = s3Url.substring(keyStartIndex + bucketPattern.length());
     return s3Service.downloadTextContent(s3Key);
 }
+
+@Override
+public Optional<PrimaryHospitalDTO> getPrimaryHospital(UUID patientId) {
+        Optional<Patient> patientOpt = patientRepository.findById(patientId);
+        
+        if (patientOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Patient patient = patientOpt.get();
+        
+        // Verificar si el paciente tiene hospitales asignados
+        if (patient.getHospitals() == null || patient.getHospitals().isEmpty()) {
+            return Optional.empty();
+        }
+        
+        // Obtener el primer hospital (índice 0)
+        Hospital primaryHospital = patient.getHospitals().get(0);
+        
+        return Optional.of(PrimaryHospitalDTO.fromHospital(primaryHospital));
+    }
 }

@@ -4,6 +4,7 @@ import com.biotrack.backend.models.enums.Gender;
 import com.biotrack.backend.models.enums.Role;
 
 public record LoginResponseDTO(
+    String id, // UUID del usuario o paciente
     String email,
     String name,
     String firstName,
@@ -17,6 +18,7 @@ public record LoginResponseDTO(
     // Constructor para Usuario
     public static LoginResponseDTO fromUser(com.biotrack.backend.models.User user, String token) {
         return new LoginResponseDTO(
+            user.getId().toString(),
             user.getEmail(),
             user.getName(),
             null, // firstName
@@ -32,6 +34,7 @@ public record LoginResponseDTO(
     // Constructor para Paciente
     public static LoginResponseDTO fromPatient(com.biotrack.backend.models.Patient patient, String token) {
         return new LoginResponseDTO(
+            patient.getId().toString(),
             patient.getEmail(),
             null, // name
             patient.getFirstName(),

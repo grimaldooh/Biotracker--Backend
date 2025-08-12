@@ -2,6 +2,7 @@ package com.biotrack.backend.controllers;
 
 import com.biotrack.backend.dto.ClinicalHistoryRecordDTO;
 import com.biotrack.backend.dto.PatientCreationDTO;
+import com.biotrack.backend.dto.PrimaryHospitalDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.models.ClinicalHistoryRecord;
 import com.biotrack.backend.models.Patient;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -207,6 +209,32 @@ public class PatientController {
         return ResponseEntity.ok()
                 .header("Content-Type", "text/plain; charset=UTF-8")
                 .body(content);
+    }
+    
+    @GetMapping("/{patientId}/primary-hospital")
+    @Operation(
+        summary = "Get patient's primary hospital",
+        description = "Retrieve basic information of the patient's main hospital (first assigned hospital)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Primary hospital found"),
+        @ApiResponse(responseCode = "404", description = "Patient not found or no hospital assigned"),
+        @ApiResponse(responseCode = "400", description = "Invalid patient ID")
+    })
+    public ResponseEntity<PrimaryHospitalDTO> getPrimaryHospital(
+            @Parameter(description = "Patient ID", required = true)
+            @PathVariable UUID patientId) {
+        try {
+            Optional<PrimaryHospitalDTO> primaryHospital = patientService.getPrimaryHospital(patientId);
+            
+            if (primaryHospital.isPresent()) {
+                return ResponseEntity.ok(primaryHospital.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving primary hospital for patient: " + e.getMessage(), e);
+        }
     }
     
     // Exception handlers con tipos específicos
