@@ -7,6 +7,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
 
 @Entity 
 @Table(name = "users")
@@ -41,6 +42,9 @@ public class User {
 
     @Column(name = "specialty", nullable = true)
     private String specialty;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDate createdAt = LocalDate.now();
 
     //Methods 
 
