@@ -27,4 +27,7 @@ public class InventoryItem {
     private String location;
 
     private String category;
+
+    @Column(nullable = false)
+    private UUID hospitalId; // Nuevo campo
 }

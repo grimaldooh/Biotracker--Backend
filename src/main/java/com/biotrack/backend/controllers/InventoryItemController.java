@@ -18,14 +18,22 @@ public class InventoryItemController {
         this.service = service;
     }
 
-    @PostMapping
-    public ResponseEntity<InventoryItem> create(@RequestBody InventoryItem item) {
+    @PostMapping("/hospital/{hospitalId}")
+    public ResponseEntity<InventoryItem> create(
+            @PathVariable UUID hospitalId,
+            @RequestBody InventoryItem item) {
+        item.setHospitalId(hospitalId);
         return ResponseEntity.status(201).body(service.create(item));
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryItem>> findAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<InventoryItem>> findAll(
+            @RequestParam(value = "hospitalId", required = false) UUID hospitalId) {
+        if (hospitalId != null) {
+            return ResponseEntity.ok(service.findByHospitalId(hospitalId));
+        } else {
+            return ResponseEntity.ok(service.findAll());
+        }
     }
 
     @GetMapping("/{id}")
@@ -43,5 +51,10 @@ public class InventoryItemController {
     public ResponseEntity<InventoryItem> update(@PathVariable UUID id, @RequestBody InventoryItem item) {
         InventoryItem updated = service.update(id, item);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/by-hospital/{hospitalId}")
+    public ResponseEntity<List<InventoryItem>> findByHospitalId(@PathVariable UUID hospitalId) {
+        return ResponseEntity.ok(service.findByHospitalId(hospitalId));
     }
 }

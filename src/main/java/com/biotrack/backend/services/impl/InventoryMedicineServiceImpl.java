@@ -50,4 +50,9 @@ public class InventoryMedicineServiceImpl implements InventoryMedicineService {
         // existing.setLocation(updatedMedicine.getLocation());
         return repository.save(existing);
     }
+
+    @Override
+    public List<InventoryMedicine> findByHospitalId(UUID hospitalId) {
+        return repository.findByHospitalId(hospitalId);
+    }
 }

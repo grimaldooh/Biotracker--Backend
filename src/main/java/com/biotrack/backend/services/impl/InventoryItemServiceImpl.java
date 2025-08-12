@@ -48,4 +48,9 @@ public class InventoryItemServiceImpl implements InventoryItemService {
         // existing.setCategory(updatedItem.getCategory());
         return repository.save(existing);
     }
+
+    @Override
+    public List<InventoryItem> findByHospitalId(UUID hospitalId) {
+        return repository.findByHospitalId(hospitalId);
+    }
 }

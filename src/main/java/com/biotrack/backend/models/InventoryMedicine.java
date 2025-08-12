@@ -32,4 +32,7 @@ public class InventoryMedicine {
     private LocalDate expirationDate;
 
     private String location;
+
+    @Column(nullable = false)
+    private UUID hospitalId; // Nuevo campo
 }

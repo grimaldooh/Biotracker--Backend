@@ -10,4 +10,5 @@ public interface InventoryMedicineService {
     InventoryMedicine findById(UUID id);
     void deleteById(UUID id);
     InventoryMedicine update(UUID id, InventoryMedicine updatedMedicine);
+    List<InventoryMedicine> findByHospitalId(UUID hospitalId);
 }
