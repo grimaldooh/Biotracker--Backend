@@ -281,6 +281,7 @@ private String buildClinicalHistoryPrompt(Patient patient, List<MedicalVisit> vi
     }
 
     prompt.append("Generate the clinical summary using the EXACT JSON structure provided, ensuring all clinical findings are properly traced to their supporting sample IDs.\n");
+    prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
 
     return prompt.toString();
 }
@@ -418,7 +419,8 @@ private String buildPatientFriendlyClinicalPrompt(Patient patient, List<MedicalV
     prompt.append("Generate the patient-friendly clinical summary using the EXACT JSON structure provided above. ");
     prompt.append("Transform the technical information into language that empowers the patient to understand ");
     prompt.append("and participate actively in their healthcare journey.\n");
-    
+    prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
+
     return prompt.toString();
 }
 
