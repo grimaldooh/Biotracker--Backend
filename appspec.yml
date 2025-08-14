@@ -5,6 +5,14 @@ files:
     destination: /opt/biotrack/
     overwrite: true
 hooks:
+  ApplicationStop:
+    - location: scripts/stop_service.sh   # script para detener el servicio (opcional)
+      timeout: 60
+      runas: ec2-user
+  BeforeInstall:
+    - location: scripts/before_install.sh # script vacío o para limpiar archivos previos
+      timeout: 60
+      runas: ec2-user
   AfterInstall:
     - location: scripts/restart_service.sh
       timeout: 60
