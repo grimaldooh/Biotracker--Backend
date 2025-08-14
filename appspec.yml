@@ -1,16 +1,16 @@
-version: 0.1
+version: 0.0
 os: linux
 files:
   - source: target/backend-0.0.1-SNAPSHOT.jar
     destination: /opt/biotrack/
     overwrite: true
 hooks:
-  ApplicationStop:
-    - location: scripts/stop_service.sh   # script para detener el servicio (opcional)
+  BeforeInstall:
+    - location: scripts/before_install.sh
       timeout: 60
       runas: ec2-user
-  BeforeInstall:
-    - location: scripts/before_install.sh # script vacío o para limpiar archivos previos
+  ApplicationStop:
+    - location: scripts/stop_service.sh
       timeout: 60
       runas: ec2-user
   AfterInstall:
