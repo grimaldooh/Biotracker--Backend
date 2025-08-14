@@ -1,0 +1,10 @@
+version: 0.0
+os: linux
+files:
+  - source: target/backend-0.0.1-SNAPSHOT.jar
+    destination: /opt/biotrack/
+hooks:
+  AfterInstall:
+    - location: scripts/restart_service.sh
+      timeout: 60
+      runas: ec2-user
