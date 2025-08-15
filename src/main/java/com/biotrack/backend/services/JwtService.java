@@ -7,7 +7,7 @@ public interface JwtService {
      * @param userType tipo de usuario (USER/PATIENT)
      * @return token JWT
      */
-    String generateToken(String email, String userType);
+    String generateToken(String email, String role);
     
     /**
      * Valida un token JWT
@@ -29,4 +29,11 @@ public interface JwtService {
      * @return tipo de usuario (USER/PATIENT)
      */
     String getUserTypeFromToken(String token);
+
+    /**
+     * Extrae el rol del token
+     * @param token token JWT
+     * @return rol del usuario (ADMIN, MEDIC, LAB_TECHNICIAN, RECEPTIONIST, PATIENT)
+     */
+    String getRoleFromToken(String token);
 }

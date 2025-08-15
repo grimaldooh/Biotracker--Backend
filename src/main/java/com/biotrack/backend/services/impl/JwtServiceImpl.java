@@ -23,13 +23,13 @@ public class JwtServiceImpl implements JwtService {
     }
     
     @Override
-    public String generateToken(String email, String userType) {
+    public String generateToken(String email, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
         
         return Jwts.builder()
                 .setSubject(email)
-                .claim("userType", userType)
+                .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
@@ -69,5 +69,15 @@ public class JwtServiceImpl implements JwtService {
                 .getBody();
         
         return claims.get("userType", String.class);
+    }
+
+    @Override
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parser()
+            .setSigningKey(getSigningKey())
+            .parseClaimsJws(token)
+            .getBody();
+        Object roleObj = claims.get("role");
+        return roleObj != null ? roleObj.toString() : null;
     }
 }

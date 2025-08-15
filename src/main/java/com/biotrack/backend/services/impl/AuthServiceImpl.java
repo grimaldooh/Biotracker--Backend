@@ -50,25 +50,22 @@ public class AuthServiceImpl implements AuthService {
         Optional<User> userOpt = userRepository.findByEmail(loginRequest.email());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            // Verificar password
             if (passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
-                String token = jwtService.generateToken(user.getEmail(), "USER");
+                String token = jwtService.generateToken(user.getEmail(), user.getRole().toString());
                 return LoginResponseDTO.fromUser(user, token);
             }
         }
-        
+
         // 2. Si no es usuario, buscar en pacientes
         Optional<Patient> patientOpt = patientRepository.findByEmail(loginRequest.email());
         if (patientOpt.isPresent()) {
             Patient patient = patientOpt.get();
-            // Verificar password
             if (passwordEncoder.matches(loginRequest.password(), patient.getPassword())) {
                 String token = jwtService.generateToken(patient.getEmail(), "PATIENT");
                 return LoginResponseDTO.fromPatient(patient, token);
             }
         }
-        
-        // 3. Si llegamos aquí, las credenciales son inválidas
+
         throw new RuntimeException("Invalid email or password");
     }
     
@@ -94,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
                 hospitalRepository.save(hospital);
             }
             
-            String token = jwtService.generateToken(existingUser.getEmail(), "USER");
+            String token = jwtService.generateToken(existingUser.getEmail(), existingUser.getRole().toString());
             return LoginResponseDTO.fromUser(existingUser, token);
         }
         
@@ -123,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
         hospitalRepository.save(hospital);
         
         // 7. Generar token y retornar respuesta
-        String token = jwtService.generateToken(newUser.getEmail(), "USER");
+        String token = jwtService.generateToken(newUser.getEmail(), newUser.getRole().toString());
         return LoginResponseDTO.fromUser(newUser, token);
     }
     

@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -203,6 +204,7 @@ public class SampleController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC')")
     @GetMapping("/hospital/{hospitalId}/latest")
     @Operation(
         summary = "Get latest 10 samples by hospital",
