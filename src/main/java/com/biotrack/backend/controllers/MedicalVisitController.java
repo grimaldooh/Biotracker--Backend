@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.parameters.*;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -79,6 +80,7 @@ public class MedicalVisitController {
         return ResponseEntity.status(201).body(dto);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{id}")
     @Operation(
         summary = "Get medical visit by ID",
@@ -102,6 +104,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(service.findById(id));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}")
     @Operation(
         summary = "Get all visits for a patient",
@@ -126,6 +129,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}/pending")
     @Operation(summary = "Get pending visits for a patient")
     public ResponseEntity<List<MedicalVisitDTO>> getPendingVisitsByPatient(@PathVariable UUID patientId) {
@@ -133,6 +137,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/doctor/{doctorId}")
     @Operation(summary = "Get all visits for a doctor")
     public ResponseEntity<List<MedicalVisitDTO>> getVisitsByDoctor(@PathVariable UUID doctorId) {
@@ -140,6 +145,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/doctor/{doctorId}/pending")
     @Operation(summary = "Get pending visits for a doctor")
     public ResponseEntity<List<MedicalVisitDTO>> getPendingVisitsByDoctor(@PathVariable UUID doctorId) {
@@ -147,6 +153,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/hospital/{medicalEntityId}")
     @Operation(
         summary = "Get all medical visits for a hospital",
@@ -168,6 +175,7 @@ public class MedicalVisitController {
         return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping
     @Operation(
         summary = "Get all medical visits",

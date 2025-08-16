@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -110,6 +111,7 @@ public class ReportController {
         }
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping
     @Operation(
         summary = "Get all reports",
@@ -126,6 +128,7 @@ public class ReportController {
         return ResponseEntity.ok(reports);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/all")
     public ResponseEntity<List<ReportDTO>> getAllReportsFixed() {
         List<Report> allReports = reportService.findAll();
@@ -136,6 +139,7 @@ public class ReportController {
         return ResponseEntity.ok(reports);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/sample/{sampleId}")
     @Operation(
         summary = "Get reports by sample",
@@ -161,6 +165,7 @@ public class ReportController {
         return ResponseEntity.ok(reports);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")    
     @GetMapping("/{reportId}")
     @Operation(
         summary = "Get report by ID",
@@ -259,6 +264,7 @@ public class ReportController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}")
     @Operation(
         summary = "Get all reports for a patient",
@@ -280,7 +286,7 @@ public class ReportController {
             responseCode = "500",
             description = "Internal server error"
         )
-    })
+    }) 
     public ResponseEntity<List<PatientReportsDTO>> getPatientReports(
             @Parameter(description = "Unique identifier of the patient")
             @PathVariable UUID patientId) {
@@ -328,11 +334,13 @@ public class ReportController {
         }
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}/genetic")
     public List<GeneticReportDTO> getGeneticReportsByPatient(@PathVariable UUID patientId) {
         return reportService.getGeneticReportsByPatient(patientId);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/genetic-report-from-url")
     @Operation(
         summary = "Get genetic report from S3 URL",

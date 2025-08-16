@@ -103,6 +103,7 @@ public class SampleController {
         return ResponseEntity.ok(samples);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{id}")
     @Operation(
         summary = "Get sample by ID",
@@ -187,6 +188,7 @@ public class SampleController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}")
     @Operation(
         summary = "List samples by patient",
@@ -209,7 +211,7 @@ public class SampleController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC')")
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/hospital/{hospitalId}/latest")
     @Operation(
         summary = "Get latest 10 samples by hospital",

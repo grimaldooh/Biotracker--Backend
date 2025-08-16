@@ -19,6 +19,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,6 +64,7 @@ public class GeneticSampleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(GeneticSampleMapper.toDTO(created));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping
     @Operation(summary = "Get all genetic samples", description = "Retrieve all genetic samples in the system")
     public ResponseEntity<List<GeneticSampleDTO>> findAll() {
@@ -73,6 +75,7 @@ public class GeneticSampleController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT')")
     @GetMapping("/{id}")
     @Operation(summary = "Get genetic sample by ID", description = "Retrieve a specific genetic sample by its ID")
     @ApiResponses(value = {
@@ -114,6 +117,7 @@ public class GeneticSampleController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}")
     @Operation(
         summary = "Get genetic samples by patient ID",
@@ -131,6 +135,7 @@ public class GeneticSampleController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/hospital/{hospitalId}/latest")
     @Operation(summary = "Get latest genetic samples by hospital", description = "Retrieve the latest 10 genetic samples for a hospital")
     public ResponseEntity<List<GeneticSampleDTO>> getLatestByHospitalId(@PathVariable UUID hospitalId) {
@@ -141,6 +146,7 @@ public class GeneticSampleController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/hospital/{hospitalId}")
     @Operation(summary = "Get all genetic samples by hospital", description = "Retrieve all genetic samples for a specific hospital")
     public ResponseEntity<List<GeneticSampleDTO>> getByHospitalId(@PathVariable UUID hospitalId) {

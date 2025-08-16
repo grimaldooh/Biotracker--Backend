@@ -3,6 +3,7 @@ package com.biotrack.backend.controllers;
 import com.biotrack.backend.models.InventoryMedicine;
 import com.biotrack.backend.services.InventoryMedicineService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,7 @@ public class InventoryMedicineController {
         }
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{id}")
     public ResponseEntity<InventoryMedicine> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.findById(id));
@@ -53,6 +55,7 @@ public class InventoryMedicineController {
         return ResponseEntity.ok(updated);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/by-hospital/{hospitalId}")
     public ResponseEntity<List<InventoryMedicine>> findByHospitalId(@PathVariable UUID hospitalId) {
         return ResponseEntity.ok(service.findByHospitalId(hospitalId));

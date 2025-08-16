@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,12 +50,14 @@ public class HospitalController {
         return ResponseEntity.status(201).body(service.create(hospital));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping
     @Operation(summary = "List all hospitals", description = "Get all hospitals")
     public ResponseEntity<List<Hospital>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{id}")
     @Operation(summary = "Get hospital by ID", description = "Get hospital details")
     public ResponseEntity<Hospital> findById(@PathVariable UUID id) {
@@ -119,6 +122,7 @@ public class HospitalController {
         }
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{hospitalId}/patients")
     @Operation(
         summary = "List patients linked to a hospital",
@@ -141,6 +145,7 @@ public class HospitalController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{hospitalId}/samples")
     @Operation(
         summary = "List all samples linked to patients of a hospital",
@@ -163,6 +168,7 @@ public class HospitalController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/{hospitalId}/patients/search")
     @Operation(
         summary = "Search patients in a hospital",

@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -173,12 +174,14 @@ public class PatientController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ClinicalHistoryRecordMapper.toDTO(record));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/latest/{patientId}")
     public ResponseEntity<ClinicalHistoryRecordDTO> getLatestSummary(@PathVariable UUID patientId) {
         ClinicalHistoryRecord record = patientService.getLatestRecord(patientId);
         return ResponseEntity.ok(ClinicalHistoryRecordMapper.toDTO(record));
     }
     
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/latest/{patientId}/summary-text")
     @Operation(
         summary = "Get latest clinical summary text for a patient",
@@ -195,6 +198,7 @@ public class PatientController {
                 .body(content);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/latest/{patientId}/summary-text/patient-friendly")
     @Operation(
         summary = "Get latest clinical summary text for a patient",

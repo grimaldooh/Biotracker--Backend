@@ -4,6 +4,7 @@ import com.biotrack.backend.dto.LabAppointmentCreationDTO;
 import com.biotrack.backend.dto.LabAppointmentDTO;
 import com.biotrack.backend.services.LabAppointmentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class LabAppointmentController {
         return ResponseEntity.status(201).body(service.create(dto));
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<LabAppointmentDTO>> findByPatient(@PathVariable UUID patientId) {
         
@@ -39,6 +41,7 @@ public class LabAppointmentController {
         return ResponseEntity.ok(updated);
     }
 
+    @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
     @GetMapping("/hospital/{hospitalId}/solicited")
     public ResponseEntity<List<LabAppointmentDTO>> getSolicitedByHospital(@PathVariable UUID hospitalId) {
         return ResponseEntity.ok(service.findSolicitedByMedicalEntityId(hospitalId));
