@@ -14,6 +14,9 @@ public interface MedicalVisitRepository extends JpaRepository<MedicalVisit, UUID
     // Citas de un paciente que no han sido completadas
     List<MedicalVisit> findByPatientIdAndVisitCompletedFalse(UUID patientId);
 
+    // Citas de un paciente que ya han sido completadas
+    List<MedicalVisit> findByPatientIdAndVisitCompletedTrue(UUID patientId);
+
     // Todas las citas de un doctor (usuario)
     List<MedicalVisit> findByDoctorId(UUID doctorId);
 

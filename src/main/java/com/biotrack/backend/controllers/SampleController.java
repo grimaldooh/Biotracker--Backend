@@ -6,9 +6,11 @@ import com.biotrack.backend.dto.Samples.SampleDetailDTO;
 import com.biotrack.backend.exceptions.ResourceNotFoundException;
 import com.biotrack.backend.factories.SampleFactory;
 import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.Report;
 import com.biotrack.backend.models.Sample;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.services.PatientService;
+import com.biotrack.backend.services.ReportService;
 import com.biotrack.backend.services.SampleService;
 import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.SampleMapper;
@@ -40,11 +42,13 @@ public class SampleController {
     private final SampleService sampleService;
     private final PatientService patientService;
     private final UserService userService;
+    private final ReportService reportService;
 
-    public SampleController(SampleService sampleService, PatientService patientService, UserService userService) {
+    public SampleController(SampleService sampleService, PatientService patientService, UserService userService, ReportService reportService) {
         this.sampleService = sampleService;
         this.patientService = patientService;
         this.userService = userService;
+        this.reportService = reportService;
     }
 
     @PostMapping
@@ -79,6 +83,7 @@ public class SampleController {
         Sample fullSample = sampleService.findById(created.getId());
         SampleDTO dto = SampleMapper.toDTO(fullSample);
 
+        Report report = reportService.generateClinicalReport(created.getId()); 
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 

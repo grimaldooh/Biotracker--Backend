@@ -236,7 +236,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("Now, using the real patient data, medical history, and genetic variant information provided above, generate the genetic analysis report in the EXACT JSON structure. ");
         prompt.append("Pay special attention to correlating the genetic findings with the patient's documented medical timeline and laboratory abnormalities. ");
         prompt.append("REMEMBER: Always include specific sample IDs (idMuestra) when referencing laboratory findings to maintain full traceability of medical correlations.\n");
-        prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
+        prompt.append("Finally and IMPORTANT, create all the response in Spanish, never change json variable names.\n");
 
         // Verificar longitud aproximada (4 caracteres ≈ 1 token)
         if (prompt.length() > 30000) { // Ajustado para la nueva estructura
@@ -386,7 +386,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         
 
         prompt.append("Now, using the real patient and sample data provided above, generate the patient-friendly report in the EXACT JSON structure. Make it educational, supportive, and easy to understand.\n");
-        prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
+        prompt.append("Finally and IMPORTANT, create all the response in Spanish, never change json variable names.\n");
 
         // Check prompt length
         if (prompt.length() > 8000) {
@@ -553,7 +553,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         
         prompt.append("Generate the complete medication compatibility analysis using the exact JSON structure above. ");
         prompt.append("Base your analysis on the provided medications and clinical context.\n");
-        prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
+        prompt.append("Finally and IMPORTANT, create all the response in Spanish, never change json variable names.\n");
 
         return prompt.toString();
     }
@@ -823,7 +823,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("patient-friendly genetic report in the EXACT JSON structure. Make it educational, supportive, ");
         prompt.append("and empowering while maintaining scientific accuracy. Transform complex genetic concepts into ");
         prompt.append("language that helps the patient understand and act on their genetic information.\n");
-        prompt.append("Finally and IMPORTANT, create all the response in Spanish, the only thing that keeps in English is Json variable names.\n");
+        prompt.append("Finally and IMPORTANT, create all the response in Spanish, never change json variable names.\n");
 
         return prompt.toString();
     }

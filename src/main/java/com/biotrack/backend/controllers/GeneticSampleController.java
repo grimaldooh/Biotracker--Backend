@@ -4,9 +4,11 @@ import com.biotrack.backend.dto.GeneticSampleCreationDTO;
 import com.biotrack.backend.dto.GeneticSampleDTO;
 import com.biotrack.backend.models.GeneticSample;
 import com.biotrack.backend.models.Patient;
+import com.biotrack.backend.models.Report;
 import com.biotrack.backend.models.User;
 import com.biotrack.backend.services.GeneticSampleService;
 import com.biotrack.backend.services.PatientService;
+import com.biotrack.backend.services.ReportService;
 import com.biotrack.backend.services.UserService;
 import com.biotrack.backend.utils.GeneticSampleMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,14 +32,17 @@ public class GeneticSampleController {
     private final GeneticSampleService geneticSampleService;
     private final PatientService patientService;
     private final UserService userService;
+    private final ReportService reportService;
 
     @Autowired
     public GeneticSampleController(GeneticSampleService geneticSampleService, 
                                  PatientService patientService, 
-                                 UserService userService) {
+                                 UserService userService,
+                                 ReportService reportService) {
         this.geneticSampleService = geneticSampleService;
         this.patientService = patientService;
         this.userService = userService;
+        this.reportService = reportService;
     }
 
     @PostMapping
@@ -53,6 +58,7 @@ public class GeneticSampleController {
         
         GeneticSample geneticSample = GeneticSampleMapper.fromCreationDTO(creationDTO, patient, registeredBy);
         GeneticSample created = geneticSampleService.create(geneticSample);
+        Report report = reportService.generateReportWithPatientInfo(created.getId(), "");
         
         return ResponseEntity.status(HttpStatus.CREATED).body(GeneticSampleMapper.toDTO(created));
     }

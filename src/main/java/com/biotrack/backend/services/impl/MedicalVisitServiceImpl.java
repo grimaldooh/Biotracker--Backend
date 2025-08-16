@@ -25,12 +25,15 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     private final MedicalVisitRepository repository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final PatientServiceImpl patientService;
 
     public MedicalVisitServiceImpl(MedicalVisitRepository repository,
                                    PatientRepository patientRepository,
+                                   PatientServiceImpl patientService,
                                    UserRepository userRepository) {
         this.repository = repository;
         this.patientRepository = patientRepository;
+        this.patientService = patientService;
         this.userRepository = userRepository;
     }
 
@@ -57,6 +60,18 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
         existingVisit.setDiagnosis(visit.getDiagnosis());
         existingVisit.setRecommendations(visit.getRecommendations());
         existingVisit.setVisitCompleted(true);
+
+        Patient patient = existingVisit.getPatient();
+        if (patient == null || patient.getId() == null) {
+            throw new RuntimeException("Patient not found");
+        }
+
+        // Busca todas las visitas completadas del paciente
+        List<MedicalVisit> visits = repository.findByPatientIdAndVisitCompletedTrue(patient.getId());
+        // Si la regla es "al menos 2", usa >= 2
+        if (visits.size() >= 2) {
+            patientService.generatePatientClinicalSummary(patient.getId());
+        }
 
         return repository.save(existingVisit);
     }
