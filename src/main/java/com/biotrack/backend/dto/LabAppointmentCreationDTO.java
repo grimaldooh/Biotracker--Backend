@@ -7,6 +7,7 @@ import java.util.UUID;
 public record LabAppointmentCreationDTO(
     UUID doctorId,
     UUID patientId,
+    UUID medicalEntityId,
     SampleType sampleType,
     String notes
 ) {}

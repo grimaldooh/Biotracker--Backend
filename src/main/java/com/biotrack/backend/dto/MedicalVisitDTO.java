@@ -8,6 +8,7 @@ import com.biotrack.backend.models.enums.MedicalVisitType;
 public record MedicalVisitDTO(
     UUID id,
     String patientName,
+    String patientId,
     String doctorName,
     LocalDateTime visitDate,
     String notes,

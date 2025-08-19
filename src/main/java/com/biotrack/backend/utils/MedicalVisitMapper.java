@@ -54,6 +54,7 @@ public class MedicalVisitMapper {
         return new MedicalVisitDTO(
             visit.getId(),
             visit.getPatient() != null ? visit.getPatient().getFirstName() + " " + visit.getPatient().getLastName() : null,
+            visit.getPatient() != null ? visit.getPatient().getId().toString() : null,
             visit.getDoctor() != null ? visit.getDoctor().getName() : null,
             visit.getVisitDate(),
             visit.getNotes(),
