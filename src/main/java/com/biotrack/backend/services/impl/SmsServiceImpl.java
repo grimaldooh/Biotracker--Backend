@@ -21,22 +21,18 @@ public class SmsServiceImpl implements SmsService {
 
     private static final Logger logger = LoggerFactory.getLogger(SmsServiceImpl.class);
     
-    private final SnsClient snsClient;
+    private final SnsClient snsClient; // Usar el bean del AwsConfig
     private final boolean smsEnabled;
-
-    public SmsServiceImpl(@Value("${aws.region:us-east-1}") String region,
+    private final String region;
+    
+    // Inyectar el SnsClient del AwsConfig
+    public SmsServiceImpl(SnsClient snsClient,
+                         @Value("${aws.region:us-east-2}") String region,
                          @Value("${aws.sns.enabled:false}") boolean smsEnabled) {
+        this.snsClient = snsClient;
+        this.region = region;
         this.smsEnabled = smsEnabled;
-        
-        if (smsEnabled) {
-            this.snsClient = SnsClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .build();
-        } else {
-            this.snsClient = null;
-            logger.info("SMS notifications disabled");
-        }
+        logger.info("SMS notifications {}", smsEnabled ? "enabled" : "disabled");
     }
 
     @Override

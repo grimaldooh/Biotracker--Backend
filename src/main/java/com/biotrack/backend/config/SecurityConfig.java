@@ -60,6 +60,8 @@ public class SecurityConfig {
                 // Endpoints públicos de autenticación
                 .requestMatchers("/api/auth/**").permitAll()
                 
+                .requestMatchers("/api/test/**").permitAll() // Añadir esta línea
+
                 // Endpoints públicos de salud
                 .requestMatchers("/api/health/**").permitAll()
                 
