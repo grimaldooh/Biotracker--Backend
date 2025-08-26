@@ -16,10 +16,18 @@ import com.biotrack.backend.repositories.ReportRepository;
 import com.biotrack.backend.services.OpenAIService;
 import com.biotrack.backend.services.PatientService;
 import com.biotrack.backend.services.S3Service;
+import com.biotrack.backend.services.SmsService;
 import com.biotrack.backend.services.aws.S3ServiceImpl;
+
+import com.biotrack.backend.services.SmsService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,25 +38,31 @@ import java.util.UUID;
 @Transactional
 public class PatientServiceImpl implements PatientService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PatientServiceImpl.class);
+
+
     private final PatientRepository patientRepository;
     private final MedicalVisitRepository medicalVisitRepository;
     private final ReportRepository reportRepository;
     private final S3ServiceImpl s3Service;
     private final OpenAIServiceImpl openAIService; 
     private final ClinicalHistoryRecordRepository clinicalHistoryRecordRepository;
+    private final SmsService smsService;
 
     public PatientServiceImpl(PatientRepository patientRepository, 
                               MedicalVisitRepository medicalVisitRepository,
                               ReportRepository reportRepository,
                               S3ServiceImpl s3Service,
                               OpenAIServiceImpl openAIService,
-                              ClinicalHistoryRecordRepository clinicalHistoryRecordRepository) {
+                              ClinicalHistoryRecordRepository clinicalHistoryRecordRepository,
+                              SmsService smsService) {
         this.patientRepository = patientRepository;
         this.medicalVisitRepository = medicalVisitRepository;
         this.reportRepository = reportRepository;
         this.s3Service = s3Service;
         this.openAIService = openAIService;
         this.clinicalHistoryRecordRepository = clinicalHistoryRecordRepository;
+        this.smsService = smsService;
     }
 
     @Override
@@ -138,6 +152,8 @@ public class PatientServiceImpl implements PatientService {
         .build();
 
     clinicalHistoryRecordRepository.save(record);
+
+    sendReportNotification(patient);
 
     return record;
 }
@@ -497,4 +513,25 @@ public Optional<PrimaryHospitalDTO> getPrimaryHospital(UUID patientId) {
         
         return Optional.of(PrimaryHospitalDTO.fromHospital(primaryHospital));
     }
+
+
+private void sendReportNotification(Patient patient) {
+        try {
+            if (patient.getPhoneNumber() != null && !patient.getPhoneNumber().isBlank()) {
+                String patientName = patient.getFirstName() + " " + patient.getLastName();
+                smsService.sendReportGeneratedNotification(
+                    patient.getPhoneNumber(), 
+                    patientName, 
+                    "reporte médico con IA"
+                );
+                logger.info("SMS notification sent to patient {} ({})", patientName, patient.getId());
+            } else {
+                logger.warn("Patient {} has no phone number registered for SMS notifications", patient.getId());
+            }
+        } catch (Exception e) {
+            // No fallar el proceso principal por error en SMS
+            logger.error("Failed to send SMS notification to patient {}: {}", patient.getId(), e.getMessage());
+        }
+    }
+
 }
