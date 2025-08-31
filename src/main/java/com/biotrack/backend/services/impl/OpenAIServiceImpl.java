@@ -318,6 +318,13 @@ public class OpenAIServiceImpl implements OpenAIService {
 
         prompt.append("Now, using the real patient and sample data provided above, generate the report in the EXACT JSON structure. Do not invent or omit any data. Use clear, professional medical language and maintain objectivity and evidence-based interpretations.\n");
 
+        prompt.append("CRITICAL OUTPUT INSTRUCTIONS:\n");
+        prompt.append("• Return ONLY the JSON object - no markdown, no backticks, no code blocks\n");
+        prompt.append("• Do NOT wrap your response in ```json ``` or any other formatting\n");
+        prompt.append("• Start your response directly with { and end with }\n");
+        prompt.append("• Your entire response should be valid JSON that can be parsed directly\n\n");
+
+
         // Check prompt length (optional)
         if (prompt.length() > 8000) {
             throw new RuntimeException("Prompt too long. Consider reducing patient/sample info.");
@@ -340,7 +347,8 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("\n\n");
 
         prompt.append("REPORT REQUIREMENTS:\n");
-        prompt.append("Your response MUST be a valid JSON object with the following structure and field names. Use simple, patient-friendly language that avoids medical jargon. Do NOT return plain text, markdown, or any other format. Only return the JSON object.\n\n");
+        prompt.append("Your response MUST be ONLY a valid JSON object. Do NOT include markdown formatting, backticks, or any other text. ");
+        prompt.append("Return ONLY the JSON object without any wrapping or additional formatting.\n\n");
 
         prompt.append("EXACT JSON STRUCTURE (use real patient and sample data, write in simple terms):\n");
         prompt.append("{\n");
@@ -372,9 +380,21 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("    \"important_notes\": {\n");
         prompt.append("      \"limitations\": \"Simple explanation of what this test can and cannot tell you\",\n");
         prompt.append("      \"remember\": \"Key points to keep in mind about your results\"\n");
+        prompt.append("    },\n");
+        prompt.append("    \"ai_recommendation\": {\n");
+        prompt.append("      \"specialist_needed\": \"true/false - whether a specialist consultation is recommended\",\n");
+        prompt.append("      \"specialist_type\": \"Type of specialist recommended (e.g., 'Cardiólogo', 'Endocrinólogo', 'Gastroenterólogo', 'Nefrólogo', 'Hematólogo') or null if no specialist needed\",\n");
+        prompt.append("      \"reason\": \"Brief explanation of why this specialist is recommended based on the results, or null if no specialist needed\",\n");
+        prompt.append("      \"urgency\": \"Low/Medium/High - how urgent the consultation is, or null if no specialist needed\"\n");
         prompt.append("    }\n");
         prompt.append("  }\n");
         prompt.append("}\n\n");
+
+        prompt.append("CRITICAL OUTPUT INSTRUCTIONS:\n");
+        prompt.append("• Return ONLY the JSON object - no markdown, no backticks, no code blocks\n");
+        prompt.append("• Do NOT wrap your response in ```json ``` or any other formatting\n");
+        prompt.append("• Start your response directly with { and end with }\n");
+        prompt.append("• Your entire response should be valid JSON that can be parsed directly\n\n");
 
         prompt.append("WRITING GUIDELINES:\n");
         prompt.append("• Use language a high school graduate can understand\n");
@@ -384,8 +404,20 @@ public class OpenAIServiceImpl implements OpenAIService {
         prompt.append("• Be honest but not alarming - balance accuracy with reassurance where appropriate\n");
         prompt.append("• Use 'you' and 'your' to personalize the information\n\n");
         
+        prompt.append("SPECIALIST RECOMMENDATION GUIDELINES:\n");
+        prompt.append("• Analyze the clinical results carefully to determine if specialist consultation is needed\n");
+        prompt.append("• Only recommend a specialist if the results show clear abnormalities that warrant specialized care\n");
+        prompt.append("• Common specialist recommendations based on findings:\n");
+        prompt.append("  - Cardiólogo: for heart-related issues, high cholesterol, blood pressure problems\n");
+        prompt.append("  - Endocrinólogo: for diabetes, thyroid issues, hormonal imbalances\n");
+        prompt.append("  - Gastroenterólogo: for liver function abnormalities, digestive issues\n");
+        prompt.append("  - Nefrólogo: for kidney function problems\n");
+        prompt.append("  - Hematólogo: for blood disorders, anemia, clotting issues\n");
+        prompt.append("• Set specialist_needed to false and other fields to null if no specialist consultation is warranted\n");
+        prompt.append("• Be conservative - only recommend specialists when clearly indicated by abnormal results\n\n");
 
-        prompt.append("Now, using the real patient and sample data provided above, generate the patient-friendly report in the EXACT JSON structure. Make it educational, supportive, and easy to understand.\n");
+        prompt.append("Now, using the real patient and sample data provided above, generate the patient-friendly report as a direct JSON object. ");
+        prompt.append("Remember: NO markdown formatting, NO backticks, just pure JSON.\n");
         prompt.append("Finally and IMPORTANT, create all the response in Spanish, never change json variable names.\n");
 
         // Check prompt length

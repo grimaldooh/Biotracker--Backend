@@ -18,7 +18,11 @@ import com.biotrack.backend.models.enums.ReportStatus;
 import com.biotrack.backend.repositories.MutationRepository;
 import com.biotrack.backend.repositories.ReportRepository;
 import com.biotrack.backend.services.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.biotrack.backend.services.EmailService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +43,7 @@ public class ReportServiceImpl implements ReportService {
     private final PatientService patientService;
     private final GeneticSampleService geneticSampleService;
     private final ObjectMapper objectMapper; // Para parsear JSON
+    private final EmailService emailService;
 
     public ReportServiceImpl(
             ReportRepository reportRepository,
@@ -48,7 +53,8 @@ public class ReportServiceImpl implements ReportService {
             S3Service s3Service,
             PatientService patientService,
             GeneticSampleService geneticSampleService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            EmailService emailService
     ) {
         this.reportRepository = reportRepository;
         this.mutationRepository = mutationRepository;
@@ -58,6 +64,7 @@ public class ReportServiceImpl implements ReportService {
         this.patientService = patientService;
         this.geneticSampleService = geneticSampleService;
         this.objectMapper = objectMapper;
+        this.emailService = emailService;
     }
 
     @Override
@@ -195,6 +202,8 @@ public class ReportServiceImpl implements ReportService {
             report.setProcessingTimeMs(processingTime);
             report.setStatus(ReportStatus.COMPLETED);
 
+            sendReportNotificationWithSpecialistRecommendation(sample, patientFriendlyReportContent);
+
             return reportRepository.save(report);
 
         } catch (Exception e) {
@@ -205,6 +214,42 @@ public class ReportServiceImpl implements ReportService {
             throw new RuntimeException("Error generating clinical report: " + e.getMessage(), e);
         }
     }
+
+    private void sendReportNotificationWithSpecialistRecommendation(Sample sample, String patientFriendlyReportContent) {
+    try {
+        // Solo enviar recomendación si la muestra NO tiene doctor referido
+        if (sample.getDoctorReferedId() == null) {
+            // Parsear el JSON del reporte para extraer la recomendación de IA
+            String cleanedContent = cleanContentForParsing(patientFriendlyReportContent);
+            
+            if (cleanedContent.startsWith("{")) {
+                JsonNode reportJson = objectMapper.readTree(cleanedContent);
+                JsonNode aiRecommendation = reportJson.path("patient_friendly_report").path("ai_recommendation");
+                
+                boolean specialistNeeded = aiRecommendation.path("specialist_needed").asBoolean(false);
+                String specialistType = aiRecommendation.path("specialist_type").isNull() ? 
+                    null : aiRecommendation.path("specialist_type").asText();
+                String reason = aiRecommendation.path("reason").isNull() ? 
+                    null : aiRecommendation.path("reason").asText();
+                
+                // Enviar email con la recomendación
+                if (sample.getPatient() != null && sample.getPatient().getEmail() != null) {
+                    emailService.sendReportNotificationEmail(
+                        sample.getPatient(),
+                        reason,
+                        specialistType,
+                        specialistNeeded
+                    );
+                }
+            }
+        }
+        // Si tiene doctor referido, no se envía recomendación (el paciente volverá con su médico)
+        
+    } catch (Exception e) {
+        // Log error pero no fallar el proceso principal
+        System.err.println("Warning: Could not send specialist recommendation email: " + e.getMessage());
+    }
+}
 
     @Override
     public List<Report> findBySampleId(UUID sampleId) {
@@ -394,90 +439,149 @@ public class ReportServiceImpl implements ReportService {
         );
     }
 
-    @Override
-    public Object getReportFromS3(String s3Url, boolean isPatientFriendly) {
-        try {
-            // 1. Validar URL de S3
-            if (s3Url == null || s3Url.trim().isEmpty()) {
-                throw new IllegalArgumentException("S3 URL cannot be null or empty");
-            }
-            
-            // 2. Descargar contenido del archivo desde S3
-            String reportContent = s3Service.downloadFileAsString(s3Url);
-            
-            if (reportContent == null || reportContent.trim().isEmpty()) {
-                throw new RuntimeException("Report content is empty or could not be downloaded from S3");
-            }
-            
-            // 3. Parsear JSON según el tipo de reporte
-            if (isPatientFriendly) {
-                return objectMapper.readValue(reportContent, PatientFriendlyReportResponseDTO.class);
-            } else {
-                return objectMapper.readValue(reportContent, MedicalStudyReportResponseDTO.class);
-            }
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Error processing report from S3: " + e.getMessage(), e);
-        }
+    private String cleanContentForParsing(String content) {
+    if (content == null) {
+        return null;
     }
+    
+    // Remover BOM UTF-8 (0xFEFF)
+    if (content.startsWith("\uFEFF")) {
+        content = content.substring(1);
+    }
+    
+    // Remover otros caracteres invisibles comunes al inicio
+    content = content.replaceAll("^[\u200B\u200C\u200D\uFEFF]+", "");
+    
+    // Intentar corregir problemas de codificación UTF-8 comunes
+    content = fixUtf8Encoding(content);
+    
+    // Trim espacios normales
+    content = content.trim();
+    
+    return content;
+}
 
-    @Override
-    public List<GeneticReportDTO> getGeneticReportsByPatient(UUID patientId) {
-        return reportRepository.findGeneticReportsByPatientId(patientId)
-            .stream()
-            .map(r -> new GeneticReportDTO(
-                r.getId(),
-                r.getGeneticSample() == null ? null : new GeneticReportDTO.GeneticSampleInfo(
-                    r.getGeneticSample().getId(),
-                    r.getGeneticSample().getType(),
-                    r.getGeneticSample().getStatus(),
-                    r.getGeneticSample().getMedicalEntityId(),
-                    r.getGeneticSample().getCollectionDate(),
-                    r.getGeneticSample().getNotes(),
-                    r.getGeneticSample().getCreatedAt(),
-                    r.getGeneticSample().getConfidenceScore(),
-                    r.getGeneticSample().getProcessingSoftware(),
-                    r.getGeneticSample().getReferenceGenome()
-                ),
-                r.getSample() == null ? null : new GeneticReportDTO.SampleInfo(
-                    r.getSample().getId(),
-                    r.getSample().getType(),
-                    r.getSample().getStatus(),
-                    r.getSample().getMedicalEntityId(),
-                    r.getSample().getCollectionDate(),
-                    r.getSample().getNotes(),
-                    r.getSample().getCreatedAt()
-                ),
-                r.getS3Url(),
-                r.getS3UrlPatient()
-            ))
-            .toList();
+/**
+ * Corrige problemas comunes de codificación UTF-8
+ */
+private String fixUtf8Encoding(String content) {
+    if (content == null) {
+        return null;
     }
-
-    @Override
-    public Object getGeneticReportFromUrl(String s3Url, boolean isPatientFriendly) {
-        try {
-            // 1. Validar URL de S3
-            if (s3Url == null || s3Url.trim().isEmpty()) {
-                throw new IllegalArgumentException("S3 URL cannot be null or empty");
-            }
+    
+    try {
+        // Verificar si el contenido tiene problemas de codificación
+        if (content.contains("Ã¡") || content.contains("Ã³") || content.contains("Ã©") || 
+            content.contains("Ã­") || content.contains("Ãº") || content.contains("Ã±")) {
             
-            // 2. Descargar contenido del archivo desde S3
-            String reportContent = s3Service.downloadFileAsStringNotFormated(s3Url);
-            
-            if (reportContent == null || reportContent.trim().isEmpty()) {
-                throw new RuntimeException("Report content is empty or could not be downloaded from S3");
-            }
-            
-            // 3. Parsear JSON según el tipo de reporte
-            if (isPatientFriendly) {
-                return objectMapper.readValue(reportContent, PatientFriendlyGeneticReportDTO.class);
-            } else {
-                return objectMapper.readValue(reportContent, TechnicalGeneticReportDTO.class);
-            }
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Error processing genetic report from S3: " + e.getMessage(), e);
+            // Convertir a bytes usando ISO-8859-1 y luego a UTF-8
+            byte[] bytes = content.getBytes("ISO-8859-1");
+            content = new String(bytes, "UTF-8");
         }
+    } catch (Exception e) {
+        // Si hay error en la conversión, mantener el contenido original
+        System.err.println("Warning: Could not fix UTF-8 encoding: " + e.getMessage());
     }
+    
+    return content;
+}
+
+@Override
+public Object getReportFromS3(String s3Url, boolean isPatientFriendly) {
+    try {
+        // 1. Validar URL de S3
+        if (s3Url == null || s3Url.trim().isEmpty()) {
+            throw new IllegalArgumentException("S3 URL cannot be null or empty");
+        }
+
+        // 2. Descargar contenido del archivo desde S3
+        String reportContent = s3Service.downloadFileAsString(s3Url);
+
+        if (reportContent == null || reportContent.trim().isEmpty()) {
+            throw new RuntimeException("Report content is empty or could not be downloaded from S3");
+        }
+
+        // 3. Limpiar BOM, caracteres invisibles y problemas de codificación
+        String cleanedContent = cleanContentForParsing(reportContent);
+
+        // 4. Verificar si el contenido es JSON o texto plano
+        if (cleanedContent.startsWith("{")) {
+            // Es JSON - parsear según el tipo de reporte
+            if (isPatientFriendly) {
+                return objectMapper.readValue(cleanedContent, PatientFriendlyReportResponseDTO.class);
+            } else {
+                return objectMapper.readValue(cleanedContent, MedicalStudyReportResponseDTO.class);
+            }
+        } else {
+            // Es texto plano - retornar como string directamente
+            return cleanedContent;
+        }
+
+    } catch (Exception e) {
+        throw new RuntimeException("Error processing report from S3: " + e.getMessage(), e);
+    }
+}
+
+@Override
+public List<GeneticReportDTO> getGeneticReportsByPatient(UUID patientId) {
+    return reportRepository.findGeneticReportsByPatientId(patientId)
+        .stream()
+        .map(r -> new GeneticReportDTO(
+            r.getId(),
+            r.getGeneticSample() == null ? null : new GeneticReportDTO.GeneticSampleInfo(
+                r.getGeneticSample().getId(),
+                r.getGeneticSample().getType(),
+                r.getGeneticSample().getStatus(),
+                r.getGeneticSample().getMedicalEntityId(),
+                r.getGeneticSample().getCollectionDate(),
+                r.getGeneticSample().getNotes(),
+                r.getGeneticSample().getCreatedAt(),
+                r.getGeneticSample().getConfidenceScore(),
+                r.getGeneticSample().getProcessingSoftware(),
+                r.getGeneticSample().getReferenceGenome()
+            ),
+            r.getSample() == null ? null : new GeneticReportDTO.SampleInfo(
+                r.getSample().getId(),
+                r.getSample().getType(),
+                r.getSample().getStatus(),
+                r.getSample().getMedicalEntityId(),
+                r.getSample().getCollectionDate(),
+                r.getSample().getNotes(),
+                r.getSample().getCreatedAt()
+            ),
+            r.getS3Url(),
+            r.getS3UrlPatient()
+        ))
+        .toList();
+}
+
+@Override
+public Object getGeneticReportFromUrl(String s3Url, boolean isPatientFriendly) {
+    try {
+        // 1. Validar URL de S3
+        if (s3Url == null || s3Url.trim().isEmpty()) {
+            throw new IllegalArgumentException("S3 URL cannot be null or empty");
+        }
+        
+        // 2. Descargar contenido del archivo desde S3
+        String reportContent = s3Service.downloadFileAsStringNotFormated(s3Url);
+        
+        if (reportContent == null || reportContent.trim().isEmpty()) {
+            throw new RuntimeException("Report content is empty or could not be downloaded from S3");
+        }
+        
+        // 3. Limpiar BOM, caracteres invisibles y problemas de codificación
+        String cleanedContent = cleanContentForParsing(reportContent);
+        
+        // 4. Parsear JSON según el tipo de reporte
+        if (isPatientFriendly) {
+            return objectMapper.readValue(cleanedContent, PatientFriendlyGeneticReportDTO.class);
+        } else {
+            return objectMapper.readValue(cleanedContent, TechnicalGeneticReportDTO.class);
+        }
+        
+    } catch (Exception e) {
+        throw new RuntimeException("Error processing genetic report from S3: " + e.getMessage(), e);
+    }
+}
 }
