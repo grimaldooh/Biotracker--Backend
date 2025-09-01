@@ -1,33 +1,72 @@
 package com.biotrack.backend.dto.insurance;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.math.BigDecimal;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class LambdaInsuranceResponseDTO {
     
-    private BigDecimal monthlyPremium;
-    private BigDecimal riskScore;
-    private List<String> recommendations;
-    private List<String> coverageDetails;
+    @JsonProperty("monthlyPremium")
+    private Double monthlyPremium;
     
-    // Breakdown detallado del cálculo
-    private PremiumCalculationBreakdown breakdown;
+    @JsonProperty("riskScore")
+    private Double riskScore;
+    
+    @JsonProperty("modelVersion")
+    private String modelVersion;
+    
+    @JsonProperty("fallbackMode")
+    private Boolean fallbackMode;
+    
+    @JsonProperty("architecture")
+    private String architecture;
+    
+    @JsonProperty("pythonVersion")
+    private String pythonVersion;
+    
+    @JsonProperty("processingTime")
+    private Double processingTime;
+    
+    @JsonProperty("recommendations")
+    private List<String> recommendations;
+    
+    @JsonProperty("breakdown")
+    private PremiumBreakdown breakdown;
+    
+    @JsonProperty("timestamp")
+    private String timestamp;
+    
+    // Error fields
+    @JsonProperty("error")
+    private Boolean error;
+    
+    @JsonProperty("message")
+    private String message;
     
     @Data
     @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PremiumCalculationBreakdown {
-        private BigDecimal basePremium;
-        private BigDecimal ageMultiplier;
-        private BigDecimal healthMultiplier;
-        private BigDecimal lifestyleMultiplier;
-        private BigDecimal coverageMultiplier;
-        private BigDecimal finalPremium;
+    public static class PremiumBreakdown {
+        @JsonProperty("basePremium")
+        private Double basePremium;
+        
+        @JsonProperty("ageFactor")
+        private Double ageFactor;
+        
+        @JsonProperty("healthFactor")
+        private Double healthFactor;
+        
+        @JsonProperty("smokingFactor")
+        private Double smokingFactor;
+        
+        @JsonProperty("lifestyleFactor")
+        private Double lifestyleFactor;
+        
+        @JsonProperty("exerciseFactor")
+        private Double exerciseFactor;
     }
 }

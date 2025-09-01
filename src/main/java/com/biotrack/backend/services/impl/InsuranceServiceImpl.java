@@ -7,10 +7,12 @@ import com.biotrack.backend.models.enums.CoverageType;
 import com.biotrack.backend.models.enums.QuoteStatus;
 import com.biotrack.backend.repositories.InsuranceQuoteRepository;
 import com.biotrack.backend.repositories.PatientRepository;
-import com.biotrack.backend.services.InsuranceService;
 import com.biotrack.backend.services.AwsLambdaInsuranceService;
+import com.biotrack.backend.services.InsuranceService;
+import com.biotrack.backend.services.impl.AwsLambdaInsuranceServiceImpl;
 import com.biotrack.backend.services.PatientService;
 import com.biotrack.backend.services.impl.MedicalSummaryParserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class InsuranceServiceImpl implements InsuranceService {
     private final PatientService patientService;
     private final AwsLambdaInsuranceService lambdaInsuranceService;
     private final MedicalSummaryParserService medicalSummaryParserService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public InsuranceQuoteResponseDTO calculateInsuranceQuote(InsuranceQuoteRequestDTO request) {
@@ -43,30 +47,31 @@ public class InsuranceServiceImpl implements InsuranceService {
             // 1. Validar y obtener paciente
             Patient patient = validateAndGetPatient(request.getPatientId());
             
-            // 2. Obtener y parsear resumen médico del paciente
+            // 2. Obtener datos médicos del paciente
             MedicalDataForInsuranceDTO medicalData = getPatientMedicalData(patient.getId());
             
-            // 3. Preparar datos para AWS Lambda
+            // 3. Preparar request para Lambda
             LambdaInsuranceRequestDTO lambdaRequest = prepareLambdaRequest(request, medicalData);
+            log.info("Calling AWS Lambda for premium calculation...");
             
-            // 4. Llamar a AWS Lambda para cálculo ML
+            // 4. Llamar a AWS Lambda
             LambdaInsuranceResponseDTO lambdaResponse = lambdaInsuranceService.calculateInsurancePremium(lambdaRequest);
             
-            // 5. Crear y guardar la cotización
-            InsuranceQuote quote = createInsuranceQuote(request, patient, lambdaResponse);
+            // 5. Crear y guardar cotización
+            InsuranceQuote quote = createInsuranceQuoteFromLambda(request, patient, lambdaResponse);
             InsuranceQuote savedQuote = insuranceQuoteRepository.save(quote);
             
-            // 6. Convertir a DTO de respuesta
+            // 6. Crear response DTO
             InsuranceQuoteResponseDTO response = mapToResponseDTO(savedQuote, lambdaResponse);
             
-            log.info("Insurance quote calculated successfully. Quote ID: {}, Premium: ${}", 
+            log.info("Insurance quote calculated successfully via Lambda. Quote ID: {}, Premium: ${}", 
                     savedQuote.getId(), savedQuote.getMonthlyPremium());
             
             return response;
             
         } catch (Exception e) {
             log.error("Error calculating insurance quote for patient: {}", request.getPatientId(), e);
-            throw new RuntimeException("Failed to calculate insurance quote", e);
+            throw new RuntimeException("Failed to calculate insurance quote: " + e.getMessage(), e);
         }
     }
 
@@ -210,45 +215,71 @@ public class InsuranceServiceImpl implements InsuranceService {
 
     private LambdaInsuranceRequestDTO prepareLambdaRequest(InsuranceQuoteRequestDTO request, MedicalDataForInsuranceDTO medicalData) {
         return LambdaInsuranceRequestDTO.builder()
-                // Datos del resumen médico
+                // Datos requeridos
                 .age(medicalData.getAge())
-                .bmi(null) // No disponible en el JSON actual
+                .coverageAmount(request.getCoverageAmount().doubleValue())
+                
+                // Datos opcionales del resumen médico
                 .chronicConditionsCount(medicalData.getChronicConditionsCount())
                 .consultationsPerYear(medicalData.getConsultationsThisYear())
                 .medicationsCount(medicalData.getMedicationsCount())
-                .averageLabResults(medicalData.getHasAbnormalLabResults() ? 1.5 : 0.5) // Normalizado
+                .averageLabResults(medicalData.getHasAbnormalLabResults() ? 0.8 : 0.3)
                 
                 // Datos del request (lifestyle)
+                .coverageType(request.getCoverageType().name())
+                .smokingStatus(request.getSmokingStatus())
                 .lifestyleScore(request.getLifestyleScore())
+                .exerciseFrequency(request.getExerciseFrequency())
                 .occupationRiskLevel(request.getOccupationRiskLevel())
                 .familyHistoryRisk(request.getFamilyHistoryRisk())
-                .exerciseFrequency(request.getExerciseFrequency())
-                .smokingStatus(request.getSmokingStatus())
                 .alcoholConsumption(request.getAlcoholConsumption())
-                
-                // Datos de cobertura
-                .coverageType(request.getCoverageType().name())
-                .coverageAmount(request.getCoverageAmount())
-                .deductible(request.getDeductible())
                 .build();
     }
 
-    private InsuranceQuote createInsuranceQuote(InsuranceQuoteRequestDTO request, Patient patient, LambdaInsuranceResponseDTO lambdaResponse) {
+    private InsuranceQuote createInsuranceQuoteFromLambda(
+            InsuranceQuoteRequestDTO request, 
+            Patient patient, 
+            LambdaInsuranceResponseDTO lambdaResponse) {
+        
         return InsuranceQuote.builder()
                 .patient(patient)
-                .monthlyPremium(lambdaResponse.getMonthlyPremium().setScale(2, RoundingMode.HALF_UP))
-                .riskScore(lambdaResponse.getRiskScore().setScale(2, RoundingMode.HALF_UP))
+                .coverageType(request.getCoverageType())
                 .coverageAmount(request.getCoverageAmount())
                 .deductible(request.getDeductible())
-                .coverageType(request.getCoverageType())
+                .monthlyPremium(BigDecimal.valueOf(lambdaResponse.getMonthlyPremium()))
+                .riskScore(BigDecimal.valueOf(lambdaResponse.getRiskScore()))
+                
+                // Datos de lifestyle del request
                 .lifestyleScore(request.getLifestyleScore())
                 .occupationRiskLevel(request.getOccupationRiskLevel())
                 .familyHistoryRisk(request.getFamilyHistoryRisk())
                 .exerciseFrequency(request.getExerciseFrequency())
                 .smokingStatus(request.getSmokingStatus())
                 .alcoholConsumption(request.getAlcoholConsumption())
+                
+                // Datos adicionales de Lambda
                 .recommendations(String.join("|", lambdaResponse.getRecommendations()))
+                .calculationDetails(createCalculationDetails(lambdaResponse)) // AGREGAR esta línea
                 .build();
+    }
+
+    private String createCalculationDetails(LambdaInsuranceResponseDTO lambdaResponse) {
+        try {
+            Map<String, Object> details = Map.of(
+                "modelVersion", lambdaResponse.getModelVersion() != null ? lambdaResponse.getModelVersion() : "unknown",
+                "architecture", lambdaResponse.getArchitecture() != null ? lambdaResponse.getArchitecture() : "unknown",
+                "processingTime", lambdaResponse.getProcessingTime() != null ? lambdaResponse.getProcessingTime() : 0.0,
+                "fallbackMode", lambdaResponse.getFallbackMode() != null ? lambdaResponse.getFallbackMode() : false,
+                "breakdown", lambdaResponse.getBreakdown() != null ? lambdaResponse.getBreakdown() : Map.of(),
+                "recommendations", lambdaResponse.getRecommendations() != null ? lambdaResponse.getRecommendations() : List.of(),
+                "timestamp", LocalDateTime.now().toString()
+            );
+            
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            log.warn("Could not serialize calculation details", e);
+            return "{}";
+        }
     }
 
     private InsuranceQuoteResponseDTO mapToResponseDTO(InsuranceQuote quote, LambdaInsuranceResponseDTO lambdaResponse) {
@@ -266,8 +297,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .quoteDate(quote.getQuoteDate())
                 .validUntil(quote.getValidUntil())
                 .recommendations(lambdaResponse.getRecommendations())
-                .coverageDetails(lambdaResponse.getCoverageDetails())
-                .premiumBreakdown(mapBreakdown(lambdaResponse.getBreakdown()))
+                //.coverageDetails(lambdaResponse.getCoverageDetails())
+               // .premiumBreakdown(mapBreakdown(lambdaResponse.getBreakdown()))
                 .build();
     }
 
@@ -290,6 +321,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .build();
     }
 
+    // COMENTAR este método por ahora hasta tener el DTO correcto:
+    /*
     private InsuranceQuoteResponseDTO.PremiumBreakdown mapBreakdown(LambdaInsuranceResponseDTO.PremiumCalculationBreakdown breakdown) {
         if (breakdown == null) {
             return null;
@@ -304,4 +337,7 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .finalPremium(breakdown.getFinalPremium())
                 .build();
     }
+    */
+
+    // ELIMINAR métodos duplicados createInsuranceQuote si existe
 }

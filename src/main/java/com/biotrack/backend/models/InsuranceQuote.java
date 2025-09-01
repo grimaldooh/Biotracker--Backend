@@ -75,6 +75,9 @@ public class InsuranceQuote {
     @Column(name = "recommendations", columnDefinition = "TEXT")
     private String recommendations;
     
+    @Column(name = "calculation_details", columnDefinition = "TEXT")
+    private String calculationDetails;
+
     @PrePersist
     protected void onCreate() {
         quoteDate = LocalDateTime.now();

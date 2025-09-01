@@ -3,6 +3,7 @@ package com.biotrack.backend.controllers;
 import com.biotrack.backend.dto.insurance.InsuranceQuoteRequestDTO;
 import com.biotrack.backend.dto.insurance.InsuranceQuoteResponseDTO;
 import com.biotrack.backend.dto.insurance.InsuranceQuoteStatsDTO;
+import com.biotrack.backend.services.AwsLambdaInsuranceService;
 import com.biotrack.backend.services.InsuranceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,6 +31,7 @@ import java.util.UUID;
 public class InsuranceController {
 
     private final InsuranceService insuranceService;
+    private final AwsLambdaInsuranceService awsLambdaInsuranceService; // AGREGAR esta línea
 
     @PostMapping("/quotes")
     @Operation(summary = "Calculate insurance quote", description = "Calculate a personalized insurance quote for a patient based on medical history and lifestyle factors")
@@ -196,5 +200,46 @@ public class InsuranceController {
         
         log.info("Expired quotes marked successfully");
         return ResponseEntity.ok().build();
+    }
+
+    // AGREGAR nuevo endpoint:
+    @GetMapping("/lambda/health")
+    @Operation(summary = "Test Lambda connection", description = "Test connectivity and functionality of the AWS Lambda insurance calculator")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lambda is healthy"),
+        @ApiResponse(responseCode = "503", description = "Lambda is not responding")
+    })
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> testLambdaHealth() {
+        
+        log.info("Testing Lambda health check");
+        
+        try {
+            boolean isHealthy = awsLambdaInsuranceService.testLambdaConnection();
+            
+            Map<String, Object> healthStatus = Map.of(
+                "lambda_healthy", isHealthy,
+                "function_name", "insurance_lambda",
+                "region", "us-east-2",
+                "timestamp", LocalDateTime.now()
+            );
+            
+            if (isHealthy) {
+                log.info("Lambda health check passed");
+                return ResponseEntity.ok(healthStatus);
+            } else {
+                log.warn("Lambda health check failed");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(healthStatus);
+            }
+            
+        } catch (Exception e) {
+            log.error("Error during Lambda health check", e);
+            Map<String, Object> errorStatus = Map.of(
+                "lambda_healthy", false,
+                "error", e.getMessage(),
+                "timestamp", LocalDateTime.now()
+            );
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorStatus);
+        }
     }
 }

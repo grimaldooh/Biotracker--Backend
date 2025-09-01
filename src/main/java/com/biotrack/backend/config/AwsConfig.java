@@ -43,10 +43,10 @@ public class AwsConfig {
                 .build();
     }
 
-    @Bean
-    public LambdaClient lambdaClient() {
-        return LambdaClient.builder()
-                .region(Region.of(region))
-                .build();
-    }
+    // @Bean
+    // public LambdaClient lambdaClient() {
+    //     return LambdaClient.builder()
+    //             .region(Region.of(region))
+    //             .build();
+    // }
 }

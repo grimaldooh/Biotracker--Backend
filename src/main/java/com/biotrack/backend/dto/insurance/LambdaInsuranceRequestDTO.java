@@ -1,31 +1,55 @@
 package com.biotrack.backend.dto.insurance;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import java.math.BigDecimal;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LambdaInsuranceRequestDTO {
     
-    // Datos del paciente (del PatientSummary)
+    // Campos requeridos
+    @JsonProperty("age")
     private Integer age;
-    private Double bmi;
-    private Integer chronicConditionsCount;
-    private Integer consultationsPerYear;
-    private Integer medicationsCount;
-    private Double averageLabResults; // promedio normalizado de resultados críticos
     
-    // Datos del request (lifestyle)
-    private Integer lifestyleScore;
-    private Integer occupationRiskLevel;
-    private Integer familyHistoryRisk;
-    private Integer exerciseFrequency;
-    private Boolean smokingStatus;
-    private Integer alcoholConsumption;
+    @JsonProperty("coverageAmount")
+    private Double coverageAmount;
     
-    // Datos de la cobertura solicitada
+    // Campos opcionales
+    @JsonProperty("coverageType")
     private String coverageType;
-    private BigDecimal coverageAmount;
-    private BigDecimal deductible;
+    
+    @JsonProperty("chronicConditionsCount")
+    private Integer chronicConditionsCount;
+    
+    @JsonProperty("smokingStatus")
+    private Boolean smokingStatus;
+    
+    @JsonProperty("lifestyleScore")
+    private Integer lifestyleScore;
+    
+    @JsonProperty("exerciseFrequency")
+    private Integer exerciseFrequency;
+    
+    @JsonProperty("occupationRiskLevel")
+    private Integer occupationRiskLevel;
+    
+    @JsonProperty("familyHistoryRisk")
+    private Integer familyHistoryRisk;
+    
+    @JsonProperty("consultationsPerYear")
+    private Integer consultationsPerYear;
+    
+    @JsonProperty("medicationsCount")
+    private Integer medicationsCount;
+    
+    @JsonProperty("averageLabResults")
+    private Double averageLabResults;
+    
+    @JsonProperty("alcoholConsumption")
+    private Integer alcoholConsumption;
 }
