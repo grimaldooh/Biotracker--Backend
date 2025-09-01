@@ -9,6 +9,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 @Configuration
 public class AwsConfig {
@@ -39,6 +40,13 @@ public class AwsConfig {
         return SnsClient.builder()
                 .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                .build();
+    }
+
+    @Bean
+    public LambdaClient lambdaClient() {
+        return LambdaClient.builder()
+                .region(Region.of(region))
                 .build();
     }
 }
