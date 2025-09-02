@@ -20,4 +20,6 @@ public interface PatientService {
     String getLatestSummaryTextPatientFriendly(UUID patientId);
     List<Patient> searchPatients(String firstName, String lastName);
     Optional<PrimaryHospitalDTO> getPrimaryHospital(UUID patientId);
+    int medicalVisitsCount(UUID patientId);
+    int pendingMedicalVisitsCount(UUID patientId);
 }

@@ -1,6 +1,7 @@
 package com.biotrack.backend.services.impl;
 
 import com.biotrack.backend.dto.DoctorStatsDTO;
+import com.biotrack.backend.dto.MedicalVisitDTO;
 import com.biotrack.backend.models.MedicalVisit;
 import com.biotrack.backend.models.Patient;
 import com.biotrack.backend.models.User;
@@ -94,6 +95,7 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
 
     @Override
     public List<MedicalVisit> findByDoctorId(UUID doctorId) {
+
         return repository.findByDoctorId(doctorId);
     }
 
@@ -117,6 +119,31 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     public List<MedicalVisit> findByMedicalEntityId(UUID medicalEntityId) {
         return repository.findByMedicalEntityId(medicalEntityId);
     }
+
+    @Override
+    public List<MedicalVisitDTO> addPatientVisitCounts(List<MedicalVisitDTO> visits) {
+        return visits.stream()
+                .map(visit -> {
+                    int visitsCount = patientService.medicalVisitsCount(UUID.fromString(visit.patientId()));
+                    return new MedicalVisitDTO(
+                        visit.id(),
+                        visit.patientName(),
+                        visit.patientId(),
+                        visit.doctorName(),
+                        visit.visitDate(),
+                        visit.notes(),
+                        visit.diagnosis(),
+                        visit.recommendations(),
+                        visit.medicalEntityId(),
+                        visit.visitCompleted(),
+                        visit.type(),
+                        visit.medicalArea(),
+                        visitsCount // patientVisitsCount
+                    );
+                })
+                .toList();
+    }
+
 
     @Override
     public DoctorStatsDTO getDoctorStats(UUID doctorId) {

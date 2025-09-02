@@ -41,7 +41,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "404", description = "Patient not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    //@PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN')")
     public ResponseEntity<InsuranceQuoteResponseDTO> calculateQuote(
             @Valid @RequestBody InsuranceQuoteRequestDTO request) {
         
@@ -65,7 +65,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "200", description = "Quotes retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "Patient not found")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<List<InsuranceQuoteResponseDTO>> getPatientQuotes(
             @Parameter(description = "Patient ID") @PathVariable UUID patientId) {
         
@@ -83,7 +83,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "200", description = "Latest quote retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "No active quote found for patient")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<InsuranceQuoteResponseDTO> getLatestActiveQuote(
             @Parameter(description = "Patient ID") @PathVariable UUID patientId) {
         
@@ -106,7 +106,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "200", description = "Quote retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "Quote not found")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<InsuranceQuoteResponseDTO> getQuoteById(
             @Parameter(description = "Quote UUID") @PathVariable UUID quoteId) {
         
@@ -128,7 +128,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "400", description = "Quote cannot be accepted (expired or invalid status)"),
         @ApiResponse(responseCode = "404", description = "Quote not found")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN')")
     public ResponseEntity<InsuranceQuoteResponseDTO> acceptQuote(
             @Parameter(description = "Quote UUID") @PathVariable UUID quoteId) {
         
@@ -152,7 +152,7 @@ public class InsuranceController {
         @ApiResponse(responseCode = "200", description = "Quote rejected successfully"),
         @ApiResponse(responseCode = "404", description = "Quote not found")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MEDIC') or hasRole('ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<InsuranceQuoteResponseDTO> rejectQuote(
             @Parameter(description = "Quote UUID") @PathVariable UUID quoteId) {
         
@@ -175,7 +175,7 @@ public class InsuranceController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MEDIC') or hasRole('PATIENT')")
     public ResponseEntity<InsuranceQuoteStatsDTO> getInsuranceStatistics() {
         
         log.info("Fetching insurance statistics");
@@ -191,7 +191,7 @@ public class InsuranceController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Expired quotes marked successfully")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MEDIC') or hasRole('PATIENT')")
     public ResponseEntity<Void> markExpiredQuotes() {
         
         log.info("Manual trigger to mark expired quotes");

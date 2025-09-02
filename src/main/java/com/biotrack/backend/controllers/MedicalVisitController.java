@@ -142,7 +142,9 @@ public class MedicalVisitController {
     @Operation(summary = "Get all visits for a doctor")
     public ResponseEntity<List<MedicalVisitDTO>> getVisitsByDoctor(@PathVariable UUID doctorId) {
         List<MedicalVisit> visits = service.findByDoctorId(doctorId);
-        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
+        List<MedicalVisitDTO> dtoVisits = MedicalVisitMapper.toDTOList(visits);
+        List<MedicalVisitDTO> processedVisits = service.addPatientVisitCounts(dtoVisits);
+        return ResponseEntity.ok(processedVisits);
     }
 
     @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")
@@ -150,7 +152,9 @@ public class MedicalVisitController {
     @Operation(summary = "Get pending visits for a doctor")
     public ResponseEntity<List<MedicalVisitDTO>> getPendingVisitsByDoctor(@PathVariable UUID doctorId) {
         List<MedicalVisit> visits = service.findPendingByDoctorId(doctorId);
-        return ResponseEntity.ok(MedicalVisitMapper.toDTOList(visits));
+        List<MedicalVisitDTO> dtoVisits = MedicalVisitMapper.toDTOList(visits);
+        List<MedicalVisitDTO> processedVisits = service.addPatientVisitCounts(dtoVisits);
+        return ResponseEntity.ok(processedVisits);
     }
 
     @PreAuthorize("hasRole('LAB_TECHNICIAN') or hasRole('MEDIC') or hasRole('PATIENT') or hasRole('ADMIN') or hasRole('RECEPTIONIST')")

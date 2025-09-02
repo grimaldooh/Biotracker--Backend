@@ -63,7 +63,8 @@ public class MedicalVisitMapper {
             visit.getMedicalEntityId(),
             visit.isVisitCompleted(),
             visit.getType(),
-            visit.getMedicalArea()
+            visit.getMedicalArea(),
+            0
         );
     }
 

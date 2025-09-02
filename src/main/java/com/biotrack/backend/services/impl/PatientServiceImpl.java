@@ -159,6 +159,16 @@ public class PatientServiceImpl implements PatientService {
 }
 
 @Override
+public int medicalVisitsCount(UUID patientId) {
+    return medicalVisitRepository.findByPatientId(patientId).size();
+}
+
+@Override
+public int pendingMedicalVisitsCount(UUID patientId) {
+    return medicalVisitRepository.findByPatientIdAndVisitCompletedFalse(patientId).size();
+}
+
+@Override
 public ClinicalHistoryRecord getLatestRecord(UUID patientId) {
     return clinicalHistoryRecordRepository.findTopByPatientIdOrderByCreatedAtDesc(patientId);
 } 
