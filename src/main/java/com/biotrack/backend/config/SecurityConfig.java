@@ -69,7 +69,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/hospitals/**").permitAll()
                 
                 // Documentación Swagger
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/swagger-ui/**").permitAll()
                 
                 // Permitir requests OPTIONS (preflight)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
